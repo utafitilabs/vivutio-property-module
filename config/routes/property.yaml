@@ -1,0 +1,6 @@
+# The properties module's pages (vivutio/property-module): the register, a
+# property's page and its configure page, under /properties. The addresses are
+# the controller's own attributes; this file is what mounts them.
+property:
+    resource: '@VivutioPropertyBundle/src/Controller/'
+    type: attribute
