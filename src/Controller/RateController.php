@@ -38,6 +38,8 @@ use Vivutio\Property\Repository\RateRepository;
 use Vivutio\Property\Repository\RateTermsRepository;
 use Vivutio\Property\Repository\RoomTypeRepository;
 use Vivutio\Property\Repository\SeasonPeriodRepository;
+use Vivutio\Property\Repository\SeasonRepository;
+use Vivutio\Property\Service\CancellationService;
 use Vivutio\Property\Service\PropertyDirectoryService;
 use Vivutio\Property\Service\RateQuoteService;
 use Vivutio\Property\Service\RateService;
@@ -66,6 +68,8 @@ final readonly class RateController
         private RoomTypeRepository $rooms,
         private SeasonPeriodRepository $periods,
         private PropertyDirectoryService $directory,
+        private CancellationService $cancellation,
+        private SeasonRepository $seasons,
         private CsrfTokenManagerInterface $tokens,
         private UrlGeneratorInterface $urls,
     ) {
@@ -241,6 +245,13 @@ final readonly class RateController
         }
 
         [$quoted, $refused] = null === $quote ? [null, null] : $this->quoted($property, $quote);
+        $cancelled = null === $quote || !\is_string($quote['cancelled'] ?? null) ? false : \DateTimeImmutable::createFromFormat('!Y-m-d', $quote['cancelled']);
+        $charge = $quoted instanceof Quote && false !== $cancelled ? $this->cancellation->charge($quoted, $cancelled) : null;
+
+        $policies = [];
+        foreach ($this->seasons->findByProperty($property) as $season) {
+            $policies[] = ['season' => $season, 'follows' => null === $season->getCancellation(), 'bands' => $this->cancellation->bands($this->cancellation->tiersOf($season))];
+        }
 
         return new Response($this->twig->render('@VivutioProperty/properties/rates.html.twig', [
             'property' => $property,
@@ -257,6 +268,9 @@ final readonly class RateController
             'setup' => $setup ?? ['currency' => (string) $property->getCurrency(), 'pricing' => $property->getPricing()->value, 'boards' => $property->getBoards()],
             'asked' => $quote ?? [],
             'quote' => $quoted,
+            'charge' => $charge,
+            'property_bands' => $this->cancellation->bands($property->getCancellation()),
+            'policies' => $policies,
             'refused' => $refused,
             'wrong' => $wrong,
             'expired' => $expired,

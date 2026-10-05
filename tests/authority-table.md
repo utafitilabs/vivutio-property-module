@@ -284,6 +284,34 @@ Checks: `properties.configure`
 | Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/calendar |
 | Super Admin | not found |
 
+## property_cancellation: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/cancellation
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: Cancellation · Probed camp · vivutio |
+| Super Admin | allowed: Cancellation · Probed camp · vivutio |
+
+## property_cancellation: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/cancellation
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/cancellation |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/cancellation |
+
 ## property_rates: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates?year=2026
 
 Checks: `properties.read`

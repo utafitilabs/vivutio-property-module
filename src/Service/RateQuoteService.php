@@ -88,7 +88,7 @@ final readonly class RateQuoteService
                 ? ['1 room' => $base]
                 : $this->perPerson($period, $base, $adults, $children, $infants);
             $cost = array_sum($lines);
-            $priced[] = ['date' => $night, 'season' => $period->getSeason()->getName(), 'lines' => $lines, 'total' => $cost];
+            $priced[] = ['date' => $night, 'season' => $period->getSeason()->getName(), 'period' => $period, 'lines' => $lines, 'total' => $cost];
             $total += $cost;
         }
 

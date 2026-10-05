@@ -95,6 +95,15 @@
         {% endif %}
         {% endif %}
 
+        <section class="panel" data-cancellation>
+            <header class="panel-head"><h2>Cancellation</h2><p>Counted in days before arrival; each night by its own season</p></header>
+            <div class="fact" data-policy="property"><span>The property's</span><ul>{% for band in property_bands %}<li>{{ band }}</li>{% endfor %}</ul></div>
+            {% for policy in policies %}
+                <div class="fact" data-policy="{{ policy.season.name }}"><span>{{ policy.season.name }}{% if policy.follows %} &middot; The property's{% endif %}</span><ul>{% for band in policy.bands %}<li>{{ band }}</li>{% endfor %}</ul></div>
+            {% endfor %}
+            {% if may %}<footer class="panel-foot"><span class="state"></span><a class="button outline" href="{{ path('property_cancellation', {uuid: property.uuid}) }}">Configure cancellation</a></footer>{% endif %}
+        </section>
+
         <form class="panel" method="get" action="{{ path('property_rates', {uuid: property.uuid}) }}">
             <header class="panel-head"><h2>What a stay costs</h2><p>One room, priced night by night as a booking will be</p></header>
             <input type="hidden" name="year" value="{{ year }}">
@@ -108,6 +117,7 @@
                 <div class="field"><label for="quote-adults">Adults</label><input class="input" id="quote-adults" name="adults" type="number" min="0" value="{{ asked.adults ?? 2 }}"></div>
                 <div class="field"><label for="quote-children">Children, infants</label><div class="grid-2"><input class="input" id="quote-children" name="children" type="number" min="0" value="{{ asked.children ?? 0 }}" aria-label="Children"><input class="input" name="infants" type="number" min="0" value="{{ asked.infants ?? 0 }}" aria-label="Infants"></div></div>
             </div>
+            <div class="grid-3"><div class="field"><label for="quote-cancelled">If cancelled on</label><input class="input" id="quote-cancelled" name="cancelled" type="date" value="{{ asked.cancelled ?? '' }}"></div></div>
             {% if quote or refused %}
                 <div data-quote>
                     {% if quote %}
@@ -115,6 +125,9 @@
                             <div class="fact" data-night="{{ night.date|date('j M Y') }}"><span>{{ night.date|date('D j M Y') }} &middot; {{ night.season }} &middot; {% for label, cents in night.lines %}{{ label }}{{ not loop.last ? ', ' }}{% endfor %}</span><b>{{ quote.says(night.total) }}</b></div>
                         {% endfor %}
                         <div class="fact"><span><b>{{ quote.nights|length }} {{ quote.nights|length == 1 ? 'night' : 'nights' }}</b></span><b data-total>{{ quote.says(quote.total) }}</b></div>
+                        {% if charge %}
+                            <div class="fact" data-cancel><span>Cancelled {{ charge.when }}{% for season, line in charge.bySeason %} &middot; {{ season }}: {{ line[0] }}% of {{ charge.says(line[1]) }}{% endfor %}</span><b data-cancel-total>{{ charge.says(charge.total) }}</b></div>
+                        {% endif %}
                     {% else %}
                         <div class="notice warn" role="status">{{ icons.icon('alert') }}<span>{{ refused }}</span></div>
                     {% endif %}

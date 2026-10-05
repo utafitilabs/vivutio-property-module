@@ -22,6 +22,7 @@ use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Property\Access\PropertyConcerns;
 use Vivutio\Property\Access\PropertyScopes;
 use Vivutio\Property\Controller\CalendarController;
+use Vivutio\Property\Controller\CancellationController;
 use Vivutio\Property\Controller\PropertyController;
 use Vivutio\Property\Controller\RateController;
 use Vivutio\Property\Controller\RoomController;
@@ -35,6 +36,7 @@ use Vivutio\Property\Repository\RoomTypeRepository;
 use Vivutio\Property\Repository\SeasonPeriodRepository;
 use Vivutio\Property\Repository\SeasonRepository;
 use Vivutio\Property\Service\AvailabilityService;
+use Vivutio\Property\Service\CancellationService;
 use Vivutio\Property\Service\PropertyDirectoryService;
 use Vivutio\Property\Service\PropertyService;
 use Vivutio\Property\Service\RateQuoteService;
@@ -146,6 +148,22 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(RateRepository::class), service(RateTermsRepository::class), service(SeasonPeriodRepository::class)]);
     $services->alias(RateQuoteService::class, 'property.rate_quotes');
 
+    // What cancelling costs, and the tiers it is counted by.
+    $services->set('property.cancellation', CancellationService::class)
+        ->args([service('doctrine.orm.entity_manager')]);
+    $services->alias(CancellationService::class, 'property.cancellation');
+
+    $services->set('property.controller.cancellation', CancellationController::class)
+        ->args([
+            service('twig'),
+            service('property.cancellation'),
+            service(SeasonRepository::class),
+            service('security.csrf.token_manager'),
+            service('router'),
+        ])
+        ->public();
+    $services->alias(CancellationController::class, 'property.controller.cancellation')->public();
+
     $services->set('property.controller.rates', RateController::class)
         ->args([
             service('twig'),
@@ -156,6 +174,8 @@ return static function (ContainerConfigurator $container): void {
             service(RoomTypeRepository::class),
             service(SeasonPeriodRepository::class),
             service('property.directory'),
+            service('property.cancellation'),
+            service(SeasonRepository::class),
             service('security.csrf.token_manager'),
             service('router'),
         ])

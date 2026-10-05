@@ -13,13 +13,15 @@ declare(strict_types=1);
 
 namespace Vivutio\Property\Model;
 
+use Vivutio\Property\Entity\SeasonPeriod;
+
 /**
  * What a stay costs, night by night, in cents of its property's currency.
  */
 final readonly class Quote
 {
     /**
-     * @param list<array{date: \DateTimeImmutable, season: string, lines: array<string, int>, total: int}> $nights
+     * @param list<array{date: \DateTimeImmutable, season: string, period: SeasonPeriod, lines: array<string, int>, total: int}> $nights
      */
     public function __construct(
         public string $currency,

@@ -113,6 +113,10 @@ class Property implements PlaceInterface
     #[ORM\Column(length: 16, enumType: PricingEnum::class)]
     private PricingEnum $pricing = PricingEnum::PerPerson;
 
+    /** @var list<array{days: int, percent: int}> its cancellation tiers, the most days first; none, and cancelling is free */
+    #[ORM\Column(type: Types::JSON)]
+    private array $cancellation = [];
+
     /** @var list<string> the board bases it sells, each a BoardBasisEnum value */
     #[ORM\Column(type: Types::JSON)]
     private array $boards = [];
@@ -352,6 +356,24 @@ class Property implements PlaceInterface
     public function setBoards(array $boards): static
     {
         $this->boards = $boards;
+
+        return $this;
+    }
+
+    /**
+     * @return list<array{days: int, percent: int}>
+     */
+    public function getCancellation(): array
+    {
+        return $this->cancellation;
+    }
+
+    /**
+     * @param list<array{days: int, percent: int}> $cancellation
+     */
+    public function setCancellation(array $cancellation): static
+    {
+        $this->cancellation = $cancellation;
 
         return $this;
     }

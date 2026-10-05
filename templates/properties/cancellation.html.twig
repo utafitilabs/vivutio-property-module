@@ -1,0 +1,46 @@
+{# A property's cancellation page, card by card: its own tiers, and for each
+   season whether it follows them, charges nothing or has its own. Each card
+   saves on its own. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+
+{% block title %}Cancellation · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+<header class="page-head">
+    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / <a href="{{ path('property_rates', {uuid: property.uuid}) }}">{{ property.name }}</a> / Cancellation</nav><div class="title"><h1>Cancellation</h1><span class="about">{{ property.name }}</span></div></div>
+    <div class="actions"><a class="button outline" href="{{ path('property_rates', {uuid: property.uuid}) }}">{{ icons.icon('left', 15) }} Back to the rates</a></div>
+</header>
+
+{% if said %}<div class="notice" role="status">{{ icons.icon('check') }}<span>{{ said }}</span></div>{% endif %}
+{% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Try again.</span></div>{% endif %}
+
+<div class="stack">
+    {% for card in cards %}
+    <form class="panel" method="post" action="{{ path('property_cancellation', {uuid: property.uuid}) }}" data-card="{{ card.name }}" novalidate>
+        <header class="panel-head"><h2>{{ card.title }}</h2><p>{{ card.key == 'property' ? 'From so many days before arrival, so much of what the stay costs; earlier is free' : 'Its nights are charged by these' }}</p></header>
+        <input type="hidden" name="_token" value="{{ csrf_token('property_cancellation') }}"><input type="hidden" name="card" value="{{ card.key }}">
+        {% if wrong[card.key] is defined %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ wrong[card.key] }}</span></div>{% endif %}
+        {% if card.key != 'property' %}
+            <div class="grid-2"><div class="field"><label for="mode-{{ loop.index }}">Its cancellation</label>
+                <select class="select" id="mode-{{ loop.index }}" name="mode">
+                    <option value="follow"{{ card.mode == 'follow' ? ' selected' }}>The property's tiers</option>
+                    <option value="no_charge"{{ card.mode == 'no_charge' ? ' selected' }}>No charge to cancel</option>
+                    <option value="own"{{ card.mode == 'own' ? ' selected' }}>Its own tiers, below</option>
+                </select></div></div>
+        {% endif %}
+        <table class="table">
+            <thead><tr><th>From days before arrival</th><th>Share of the stay charged, per cent</th></tr></thead>
+            <tbody>
+            {% for row in card.tiers %}
+                <tr><td><input class="input" name="tiers[{{ loop.index0 }}][days]" value="{{ row[0] }}" inputmode="numeric" aria-label="Tier {{ loop.index }}, days before arrival"></td>
+                    <td><input class="input" name="tiers[{{ loop.index0 }}][percent]" value="{{ row[1] }}" inputmode="numeric" aria-label="Tier {{ loop.index }}, per cent"></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <footer class="panel-foot"><span class="state">A row left empty is left out</span><button type="submit" class="button main">Save {{ card.key == 'property' ? "the property's tiers" : card.name }}</button></footer>
+    </form>
+    {% endfor %}
+</div>
+{% endblock %}

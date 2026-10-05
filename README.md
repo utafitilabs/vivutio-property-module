@@ -52,6 +52,11 @@ and the pages are gone. The migration builds its one table.
   rate (a term left empty is not sold); and what a stay costs, priced night by
   night by the one service bookings will use. A period with rates is kept, and
   what the rates mean is not changed under them.
+- **Cancellation**: a property's tiers, each "from so many days before
+  arrival, so much of the stay"; each season follows them, charges nothing or
+  has its own; a stay across seasons is charged night by night by each night's
+  season. Said as bands on the Rates tab, set on the cancellation page, and
+  what cancelling costs is worked out beside what the stay costs.
 - **A calendar**, on a property's Calendar tab: a month of nights, each room
   type on sale with how many are free each night, and a page for each night
   saying what takes the rest. Only closures are kept, the whole property shut
@@ -63,7 +68,7 @@ and the pages are gone. The migration builds its one table.
 - **The `property` scope**, one or more named properties, which a grant may be
   limited to.
 
-Cancellation terms arrive next.
+Property bookings arrive with their own module work next.
 
 ## Who may do what
 

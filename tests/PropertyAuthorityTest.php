@@ -18,6 +18,7 @@ use Symfony\Component\Uid\Uuid;
 use Vivutio\Bundle\IdentityBundle\Test\AuthorityTestCase;
 use Vivutio\Bundle\IdentityBundle\Test\Probe;
 use Vivutio\Property\Controller\CalendarController;
+use Vivutio\Property\Controller\CancellationController;
 use Vivutio\Property\Controller\PropertyController;
 use Vivutio\Property\Controller\RateController;
 use Vivutio\Property\Controller\RoomController;
@@ -79,6 +80,8 @@ final class PropertyAuthorityTest extends AuthorityTestCase
             new Probe(CalendarController::NIGHT, 'GET', self::PROPERTY.'/calendar/2026-07-04'),
             new Probe(CalendarController::CLOSE, 'POST', self::PROPERTY.'/closures', ['room' => self::ROOM_UUID, 'units' => '2', 'starts' => '2026-07-03', 'ends' => '2026-07-05', 'reason' => 'Added by a probe'], formAt: self::PROPERTY.'/calendar?month=2026-07'),
             new Probe(CalendarController::REMOVE, 'POST', self::PROPERTY.'/closures/'.self::CLOSURE_UUID.'/remove', formAt: self::PROPERTY.'/calendar?month=2026-07'),
+            new Probe(CancellationController::CONFIGURE, 'GET', self::PROPERTY.'/cancellation'),
+            new Probe(CancellationController::CONFIGURE, 'POST', self::PROPERTY.'/cancellation', ['card' => 'property', 'tiers' => [['days' => '30', 'percent' => '100']]], formAt: self::PROPERTY.'/cancellation'),
             new Probe(RateController::RATES, 'GET', self::PROPERTY.'/rates?year=2026'),
             new Probe(RateController::SETUP, 'POST', self::PROPERTY.'/rates/setup', ['currency' => 'USD', 'pricing' => 'per_person', 'boards' => ['full_board'], 'year' => '2026'], formAt: self::PROPERTY.'/rates?year=2026'),
             new Probe(RateController::SAVE, 'POST', self::PROPERTY.'/rates', ['year' => '2026', 'board' => 'full_board', 'amounts' => [self::ROOM_UUID => [self::PRICED_PERIOD_UUID => '310']]], formAt: self::PROPERTY.'/rates?year=2026'),

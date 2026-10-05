@@ -15,6 +15,7 @@ namespace Vivutio\Property\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Vivutio\Bundle\IdentityBundle\Entity\Trait\TimestampableTrait;
 use Vivutio\Bundle\IdentityBundle\Entity\Trait\UuidTrait;
@@ -51,6 +52,10 @@ class Season
 
     #[ORM\Column(length: 16, enumType: SeasonKindEnum::class)]
     private SeasonKindEnum $kind = SeasonKindEnum::High;
+
+    /** @var list<array{days: int, percent: int}>|null its own cancellation tiers, none for no charge, or null to follow its property's */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $cancellation = null;
 
     /** @var Collection<int, SeasonPeriod> */
     #[ORM\OneToMany(targetEntity: SeasonPeriod::class, mappedBy: 'season')]
@@ -93,6 +98,24 @@ class Season
     public function setKind(SeasonKindEnum $kind): static
     {
         $this->kind = $kind;
+
+        return $this;
+    }
+
+    /**
+     * @return list<array{days: int, percent: int}>|null
+     */
+    public function getCancellation(): ?array
+    {
+        return $this->cancellation;
+    }
+
+    /**
+     * @param list<array{days: int, percent: int}>|null $cancellation
+     */
+    public function setCancellation(?array $cancellation): static
+    {
+        $this->cancellation = $cancellation;
 
         return $this;
     }
