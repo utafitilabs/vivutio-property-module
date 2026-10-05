@@ -1,9 +1,9 @@
-{# The properties, in the core's place idiom (the offices' register): a name
-   over where it is, one fact a column, an Open door. Adding one is the
-   tiers' alone. #}
+{# The properties, in the core's register idiom: a name over its kind, one
+   fact a column, an Open door. Added by the tiers, as a draft. #}
 {% extends '@Shell/page.html.twig' %}
 {% import '@Shell/_icons.html.twig' as icons %}
 {% import '@Identity/positions/_macros.html.twig' as positions %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
 
 {% block title %}Properties{% endblock %}
 {% block here %}properties{% endblock %}
@@ -14,26 +14,35 @@
 <div class="stack">
     {% if door('properties.configure') %}
     <form class="panel" method="post" action="{{ path('property_add') }}" novalidate>
-        <header class="panel-head"><h2>Add a property</h2><p>Where it is, and what its guests sleep in</p></header>
+        <header class="panel-head"><h2>Add a property</h2><p>What it is and where; the rest is set on its configure page</p></header>
         <input type="hidden" name="_token" value="{{ csrf_token('property_add') }}">
         {% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Add it again.</span></div>{% endif %}
-        {% include '@VivutioProperty/properties/_fields.html.twig' %}
-        <footer class="panel-foot"><span class="state"></span><button type="submit" class="button main">Add the property</button></footer>
+        <div class="grid-3">
+            <div class="field{{ wrong.name is defined ? ' wrong' }}"><label for="property-name">Name</label><input class="input" id="property-name" name="name" value="{{ typed.name ?? '' }}" required maxlength="120">{% if wrong.name is defined %}<div class="hint"><span>{{ wrong.name }}</span></div>{% endif %}</div>
+            <div class="field{{ wrong.type is defined ? ' wrong' }}"><label for="property-type">Type</label>
+                <select class="select" id="property-type" name="type">{% for type in types %}<option value="{{ type.value }}"{{ type.value == (typed.type ?? 'lodge') ? ' selected' }}>{{ type.label }}</option>{% endfor %}</select>
+                {% if wrong.type is defined %}<div class="hint"><span>{{ wrong.type }}</span></div>{% endif %}</div>
+            <div class="field{{ wrong.location is defined ? ' wrong' }}"><label for="property-location">Where it is</label><input class="input" id="property-location" name="location" value="{{ typed.location ?? '' }}" required maxlength="160"><div class="hint"><span>{{ wrong.location ?? 'In a guest\'s words: Central Serengeti, Tanzania' }}</span></div></div>
+        </div>
+        <footer class="panel-foot"><span class="state">It is added as a draft</span><button type="submit" class="button main">Add the property</button></footer>
     </form>
     {% endif %}
 
     <section class="panel list">
         <table class="table">
-            <thead><tr><th>Property</th><th style="width:170px">Size</th><th style="width:90px"></th></tr></thead>
+            <thead><tr><th>Property</th><th>Where</th><th style="width:130px">Status</th><th style="width:140px">People</th><th style="width:90px"></th></tr></thead>
             <tbody>
             {% for property in properties %}
+                {%- set count = posted[property.placeId] ?? 0 -%}
                 <tr data-property="{{ property.name }}">
-                    <td><div class="who"><span class="initials">{{ positions.initials(property.name) }}</span><div><b>{{ property.name }}</b><small data-where>{{ property.location }}</small></div></div></td>
-                    <td data-size>{{ property.size }}</td>
+                    <td><div class="who"><span class="initials">{{ positions.initials(property.name) }}</span><div><b>{{ property.name }}</b><small data-type>{{ property.type.label }}</small></div></div></td>
+                    <td data-where>{{ property.location }}</td>
+                    <td data-status>{{ properties_.status_chip(property.status) }}</td>
+                    <td data-posted>{{ count == 0 ? 'Nobody posted' : count ~ ' posted' }}</td>
                     <td><a class="button outline" href="{{ path('property_show', {uuid: property.uuid}) }}">Open</a></td>
                 </tr>
             {% else %}
-                <tr><td colspan="3"><div class="empty"><b>No properties yet</b><span>A property is a camp, a lodge or a hotel the organization runs: add the first.</span></div></td></tr>
+                <tr><td colspan="5"><div class="empty"><b>No properties yet</b><span>A property is a camp, a lodge or a hotel the organization runs: add the first.</span></div></td></tr>
             {% endfor %}
             </tbody>
         </table>

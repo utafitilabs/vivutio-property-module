@@ -1,7 +1,10 @@
-{# A property's page, in the core's place idiom (an office's page). #}
+{# A property's record, in the core's record idiom: the band, what it is and
+   its house rules, how it is reached, and who is posted there. Its rooms,
+   seasons, rates and calendar join as tabs with their features. #}
 {% extends '@Shell/page.html.twig' %}
 {% import '@Shell/_icons.html.twig' as icons %}
 {% import '@Identity/positions/_macros.html.twig' as positions %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
 
 {% block title %}{{ property.name }}{% endblock %}
 {% block here %}properties{% endblock %}
@@ -9,19 +12,61 @@
 {% block page %}
 <header class="page-head">
     <span class="initials">{{ positions.initials(property.name) }}</span>
-    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / {{ property.name }}</nav><div class="title"><h1>{{ property.name }}</h1><span class="about">{{ property.location }}</span></div></div>
+    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / {{ property.name }}</nav><div class="title"><h1>{{ property.name }}</h1><span class="about" data-status>{{ properties_.status_chip(property.status) }}</span></div></div>
     <div class="actions"><a class="button outline" href="{{ path('property_list') }}">{{ icons.icon('left', 15) }} Back to properties</a>{% if door('properties.configure') %}<a class="button outline" href="{{ path('property_configure', {uuid: property.uuid}) }}">Configure</a>{% endif %}</div>
 </header>
 
 {% if saved %}<div class="notice" role="status">{{ icons.icon('check') }}<span>The property is saved.</span></div>{% endif %}
+{% if property.status.value == 'draft' %}<div class="notice warn" role="status">{{ icons.icon('alert') }}<span>{{ property.name }} is a draft: nobody can book it until it is opened.</span></div>{% endif %}
 
 <div class="band">
-    <span class="f"><span class="k">Units</span><span class="v">{{ property.units }}<em>{{ property.unit.value }}</em></span></span>
+    <span class="f"><span class="k">Type</span><span class="v" data-type>{{ property.type.label }}</span></span>
+    <span class="f"><span class="k">Grading</span><span class="v" data-grading>{{ property.grading ? property.grading ~ (property.grading == 1 ? ' star' : ' stars') : 'Not graded' }}</span></span>
+    <span class="f"><span class="k">Posted</span><span class="v">{{ posted|length }}<em>{{ posted|length == 1 ? 'person' : 'people' }}</em></span></span>
+    <span class="f"><span class="k">Departments</span><span class="v">{{ departments|length }}<em>sit here</em></span></span>
 </div>
 
-<section class="panel">
-    <header class="panel-head"><h2>Property</h2></header>
-    <div class="fact"><span>Where it is</span><b data-where>{{ property.location }}</b></div>
-    <div class="fact"><span>Size</span><b data-size>{{ property.size }}</b></div>
-</section>
+<div class="columns">
+    <div class="stack">
+        <section class="panel">
+            <header class="panel-head"><h2>About</h2><p>What operators and guests read first</p></header>
+            <div class="fact"><span>Where it is</span><b data-where>{{ property.location }}</b></div>
+            <div class="fact"><span>On a map</span><b data-coordinates>{{ property.latitude is not null ? property.latitude ~ ', ' ~ property.longitude : 'Not set' }}</b></div>
+            <div class="fact"><span>Summary</span><b data-summary>{{ property.summary ?? 'Not written yet' }}</b></div>
+            {% if property.description %}<p class="hint" data-description>{{ property.description|nl2br }}</p>{% endif %}
+        </section>
+        <section class="panel">
+            <header class="panel-head"><h2>House rules</h2><p>When guests arrive and leave, and who counts as a child</p></header>
+            <div class="fact"><span>Check-in</span><b data-check-in>{{ property.checkInFrom ? 'From ' ~ property.checkInFrom|date('H:i') : 'Not set' }}</b></div>
+            <div class="fact"><span>Check-out</span><b data-check-out>{{ property.checkOutBy ? 'By ' ~ property.checkOutBy|date('H:i') : 'Not set' }}</b></div>
+            <div class="fact"><span>Ages</span><b data-ages>{{ properties_.ages(property) }}</b></div>
+        </section>
+    </div>
+    <aside class="aside stack">
+        <section class="panel small" data-contact>
+            <header class="panel-head"><h2>Contact</h2></header>
+            {% for line in [property.email, property.phone, property.website]|filter(l => l) %}
+                <div class="fact"><b>{{ line }}</b></div>
+            {% else %}
+                <p class="hint">No way to reach it is set.</p>
+            {% endfor %}
+        </section>
+        <section class="panel small" data-posted>
+            <header class="panel-head"><h2>Posted here</h2></header>
+            {% for person in posted %}
+                <div class="action" data-person="{{ person.fullName }}"><div><a href="{{ path('identity_team_member', {uuid: person.uuid}) }}"><b>{{ person.fullName }}</b></a><span>{{ person.postedSince ? 'since ' ~ person.postedSince|date('j M Y') : '' }}</span></div></div>
+            {% else %}
+                <p class="hint">Nobody is posted here yet. A person is posted on their Position card.</p>
+            {% endfor %}
+        </section>
+        <section class="panel small" data-departments>
+            <header class="panel-head"><h2>Departments here</h2></header>
+            {% for department in departments %}
+                <div class="action" data-department="{{ department.name }}"><div><a href="{{ path('identity_department', {uuid: department.uuid}) }}"><b>{{ department.name }}</b></a></div></div>
+            {% else %}
+                <p class="hint">No department sits here; the organization's serve it.</p>
+            {% endfor %}
+        </section>
+    </aside>
+</div>
 {% endblock %}

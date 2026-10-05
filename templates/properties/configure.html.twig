@@ -1,7 +1,9 @@
-{# Configuring a property: its name, where it is, and what its guests sleep in. #}
+{# Configuring a property, every group of the record in one form and one
+   save: what it is, where, how it is reached, its house rules, its status. #}
 {% extends '@Shell/page.html.twig' %}
 {% import '@Shell/_icons.html.twig' as icons %}
 {% import '@Identity/positions/_macros.html.twig' as positions %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
 
 {% block title %}Configure {{ property.name }}{% endblock %}
 {% block here %}properties{% endblock %}
@@ -14,10 +16,51 @@
 </header>
 
 <form class="panel" method="post" action="{{ path('property_configure', {uuid: property.uuid}) }}" novalidate>
-    <header class="panel-head"><h2>Property</h2><p>Its name, where it is, and what its guests sleep in</p></header>
+    <header class="panel-head"><h2>Property</h2><p>What it is and where, how it is reached, and its house rules</p></header>
     <input type="hidden" name="_token" value="{{ csrf_token('property_configure') }}">
     {% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Save again.</span></div>{% endif %}
-    {% include '@VivutioProperty/properties/_fields.html.twig' %}
+
+    <div class="grid-3">
+        <div class="field{{ wrong.name is defined ? ' wrong' }}"><label for="property-name">Name</label><input class="input" id="property-name" name="name" value="{{ typed.name }}" required maxlength="120">{{ properties_.hint('name', wrong, null) }}</div>
+        <div class="field{{ wrong.type is defined ? ' wrong' }}"><label for="property-type">Type</label><select class="select" id="property-type" name="type">{% for type in types %}<option value="{{ type.value }}"{{ type.value == typed.type ? ' selected' }}>{{ type.label }}</option>{% endfor %}</select>{{ properties_.hint('type', wrong, null) }}</div>
+        <div class="field{{ wrong.grading is defined ? ' wrong' }}"><label for="property-grading">Star grading</label><select class="select" id="property-grading" name="grading"><option value="">Not graded</option>{% for stars in 1..5 %}<option value="{{ stars }}"{{ (stars ~ '') == typed.grading ? ' selected' }}>{{ stars }} {{ stars == 1 ? 'star' : 'stars' }}</option>{% endfor %}</select>{{ properties_.hint('grading', wrong, 'One to five; empty where it has none') }}</div>
+    </div>
+
+    <span class="label">Where it is</span>
+    <div class="grid-3">
+        <div class="field{{ wrong.location is defined ? ' wrong' }}"><label for="property-location">In words</label><input class="input" id="property-location" name="location" value="{{ typed.location }}" required maxlength="160">{{ properties_.hint('location', wrong, 'In a guest\'s words: Central Serengeti, Tanzania') }}</div>
+        <div class="field{{ wrong.latitude is defined ? ' wrong' }}"><label for="property-latitude">Latitude</label><input class="input" id="property-latitude" name="latitude" value="{{ typed.latitude }}" inputmode="decimal">{{ properties_.hint('latitude', wrong, 'Degrees, south below zero: -3.512') }}</div>
+        <div class="field{{ wrong.longitude is defined ? ' wrong' }}"><label for="property-longitude">Longitude</label><input class="input" id="property-longitude" name="longitude" value="{{ typed.longitude }}" inputmode="decimal">{{ properties_.hint('longitude', wrong, 'Degrees, east above zero: 35.821') }}</div>
+    </div>
+
+    <span class="label">About</span>
+    <div class="grid-1">
+        <div class="field{{ wrong.summary is defined ? ' wrong' }}"><label for="property-summary">Summary</label><input class="input" id="property-summary" name="summary" value="{{ typed.summary }}" maxlength="200">{{ properties_.hint('summary', wrong, 'The one line operators and guests read first') }}</div>
+        <div class="field{{ wrong.description is defined ? ' wrong' }}"><label for="property-description">Description</label><textarea class="textarea" id="property-description" name="description" rows="5">{{ typed.description }}</textarea>{{ properties_.hint('description', wrong, null) }}</div>
+    </div>
+
+    <span class="label">Contact</span>
+    <div class="grid-3">
+        <div class="field{{ wrong.email is defined ? ' wrong' }}"><label for="property-email">Email</label><input class="input" id="property-email" name="email" type="email" value="{{ typed.email }}">{{ properties_.hint('email', wrong, null) }}</div>
+        <div class="field{{ wrong.phone is defined ? ' wrong' }}"><label for="property-phone">Phone</label><input class="input" id="property-phone" name="phone" type="tel" value="{{ typed.phone }}">{{ properties_.hint('phone', wrong, null) }}</div>
+        <div class="field{{ wrong.website is defined ? ' wrong' }}"><label for="property-website">Website</label><input class="input" id="property-website" name="website" type="url" value="{{ typed.website }}">{{ properties_.hint('website', wrong, null) }}</div>
+    </div>
+
+    <span class="label">House rules</span>
+    <div class="grid-2">
+        <div class="field{{ wrong.check_in is defined ? ' wrong' }}"><label for="property-check-in">Check-in from</label><input class="input" id="property-check-in" name="check_in" type="time" value="{{ typed.check_in }}">{{ properties_.hint('check_in', wrong, 'On the 24-hour clock: 14:00') }}</div>
+        <div class="field{{ wrong.check_out is defined ? ' wrong' }}"><label for="property-check-out">Check-out by</label><input class="input" id="property-check-out" name="check_out" type="time" value="{{ typed.check_out }}">{{ properties_.hint('check_out', wrong, 'On the 24-hour clock: 10:00') }}</div>
+    </div>
+    <div class="grid-2">
+        <div class="field{{ wrong.infants_up_to is defined ? ' wrong' }}"><label for="property-infants-up-to">Infants up to</label><input class="input" id="property-infants-up-to" name="infants_up_to" type="number" min="0" max="17" value="{{ typed.infants_up_to }}">{{ properties_.hint('infants_up_to', wrong, 'Years of age; both ages or neither') }}</div>
+        <div class="field{{ wrong.children_up_to is defined ? ' wrong' }}"><label for="property-children-up-to">Children up to</label><input class="input" id="property-children-up-to" name="children_up_to" type="number" min="1" max="17" value="{{ typed.children_up_to }}">{{ properties_.hint('children_up_to', wrong, 'Years of age; older guests are adults') }}</div>
+    </div>
+
+    <span class="label">Status</span>
+    <div class="grid-2">
+        <div class="field{{ wrong.status is defined ? ' wrong' }}"><label for="property-status">Status</label><select class="select" id="property-status" name="status">{% for status in statuses %}<option value="{{ status.value }}"{{ status.value == typed.status ? ' selected' }}>{{ status.label }} &middot; {{ status.says }}</option>{% endfor %}</select>{{ properties_.hint('status', wrong, null) }}</div>
+    </div>
+
     <footer class="panel-foot"><span class="state">Nothing is saved until Save</span><button type="reset" class="button quiet">Discard</button><button type="submit" class="button main">Save property</button></footer>
 </form>
 {% endblock %}

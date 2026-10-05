@@ -19,7 +19,7 @@ use Vivutio\Bundle\IdentityBundle\Test\AuthorityTestCase;
 use Vivutio\Bundle\IdentityBundle\Test\Probe;
 use Vivutio\Property\Controller\PropertyController;
 use Vivutio\Property\Entity\Property;
-use Vivutio\Property\Enum\UnitEnum;
+use Vivutio\Property\Enum\PropertyTypeEnum;
 use Vivutio\Property\Tests\Application\Kernel;
 
 /**
@@ -43,10 +43,10 @@ final class PropertyAuthorityTest extends AuthorityTestCase
     {
         return [
             new Probe(PropertyController::REGISTER, 'GET', '/properties'),
-            new Probe(PropertyController::ADD, 'POST', '/properties', ['name' => 'Added by a probe', 'location' => 'Tarangire, Tanzania', 'units' => '12', 'unit' => 'tents'], formAt: '/properties'),
+            new Probe(PropertyController::ADD, 'POST', '/properties', ['name' => 'Added by a probe', 'type' => 'tented_camp', 'location' => 'Tarangire, Tanzania'], formAt: '/properties'),
             new Probe(PropertyController::SHOW, 'GET', self::PROPERTY),
             new Probe(PropertyController::CONFIGURE, 'GET', self::PROPERTY.'/configure'),
-            new Probe(PropertyController::CONFIGURE, 'POST', self::PROPERTY.'/configure', ['name' => 'Probed camp', 'location' => 'Central Serengeti, Tanzania', 'units' => '24', 'unit' => 'tents'], formAt: self::PROPERTY.'/configure'),
+            new Probe(PropertyController::CONFIGURE, 'POST', self::PROPERTY.'/configure', ['name' => 'Probed camp', 'type' => 'tented_camp', 'location' => 'Central Serengeti, Tanzania', 'status' => 'draft'], formAt: self::PROPERTY.'/configure'),
         ];
     }
 
@@ -64,9 +64,8 @@ final class PropertyAuthorityTest extends AuthorityTestCase
     {
         $entityManager->persist((new Property())
             ->setName('Probed camp')
+            ->setType(PropertyTypeEnum::TentedCamp)
             ->setLocation('Central Serengeti, Tanzania')
-            ->setUnits(24)
-            ->setUnit(UnitEnum::Tents)
             ->setUuid(Uuid::fromString(self::PROPERTY_UUID)));
     }
 }

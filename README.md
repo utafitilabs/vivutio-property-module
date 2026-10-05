@@ -1,8 +1,9 @@
 # vivutio/property-module
 
 **Properties for vivutio.** The camps, lodges and hotels an organization runs:
-where each is and what its guests sleep in. A property is a place to post
-people and a scope to grant permissions at, the module's own, never an office.
+what each is and where, how it is reached and its house rules, and whether it
+takes bookings. A property is a place to post people and a scope to grant
+permissions at, the module's own, never an office.
 
 ## Contents
 
@@ -29,11 +30,21 @@ and the pages are gone. The migration builds its one table.
 
 - **Properties** in the menu, for whoever may read them: a register, each
   property's page and its configure page, under `/properties`.
+- **A property in full**: its type (lodge, tented lodge, tented camp, mobile
+  camp, camp, hotel, resort, guesthouse, villa), where it is in words and on
+  a map, its star grading, a summary and a description, how it is reached,
+  its check-in and check-out times, and who counts as an infant or a child.
+- **One lifecycle**: a property is added as a draft, opened, closed for now
+  and reopened, or archived. A closure for a season belongs to its calendar,
+  not here. A property somebody is posted at is not archived.
+- **A place to post people**: through the core's place contract, every
+  property but an archived one is offered on a person's Position card beside
+  the offices, and departments may sit at it.
 - **The `property` scope**, one or more named properties, which a grant may be
   limited to.
 
-Posting people at a property, and "permissions apply at" (the whole
-organization, where they are posted, or chosen properties) arrive next.
+Rooms, seasons, rates and the availability calendar arrive next, each in its
+own release.
 
 ## Who may do what
 

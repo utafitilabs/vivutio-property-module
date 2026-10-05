@@ -29,7 +29,7 @@ Checks: `properties.configure`
 | Staff, no position | refused |
 | Staff holding the pair | refused |
 | Staff holding all but the pair | refused |
-| Admin | redirected to /properties/{new} |
+| Admin | redirected to /properties/{new}/configure |
 | Super Admin | answered 422 |
 
 ## property_show: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01

@@ -26,15 +26,18 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Twig\Environment;
 use Vivutio\Property\Entity\Property;
-use Vivutio\Property\Enum\UnitEnum;
+use Vivutio\Property\Enum\PropertyTypeEnum;
 use Vivutio\Property\Exception\InvalidPropertyException;
+use Vivutio\Property\Model\PropertyDetails;
 use Vivutio\Property\Repository\PropertyRepository;
+use Vivutio\Property\Service\PropertyDirectoryService;
 use Vivutio\Property\Service\PropertyService;
 
 /**
  * The properties: a register, a property's page and its configure page, in
- * the core's place idiom (the offices'). Read with properties.read, a module's
- * pair a department must allow; added and changed by the tiers alone.
+ * the core's record idiom. Read with properties.read, a module's pair a
+ * department must allow; added and changed by the tiers alone. A property is
+ * added as a draft and configured next.
  */
 final readonly class PropertyController
 {
@@ -51,6 +54,7 @@ final readonly class PropertyController
     public function __construct(
         private Environment $twig,
         private PropertyService $service,
+        private PropertyDirectoryService $directory,
         private PropertyRepository $properties,
         private CsrfTokenManagerInterface $tokens,
         private UrlGeneratorInterface $urls,
@@ -68,19 +72,20 @@ final readonly class PropertyController
     #[IsGranted(self::CHANGE)]
     public function add(Request $request): Response
     {
-        $typed = $this->typed($request);
+        $payload = $request->getPayload();
+        $typed = ['name' => $payload->getString('name'), 'type' => $payload->getString('type'), 'location' => $payload->getString('location')];
 
-        if (!$this->tokens->isTokenValid(new CsrfToken('property_add', $request->getPayload()->getString('_token')))) {
+        if (!$this->tokens->isTokenValid(new CsrfToken('property_add', $payload->getString('_token')))) {
             return $this->registerPage(typed: $typed, expired: true);
         }
 
         try {
-            $property = $this->service->create($typed['name'], $typed['location'], (int) $typed['units'], $typed['unit']);
+            $property = $this->service->create($typed['name'], $typed['type'], $typed['location']);
         } catch (InvalidPropertyException $refusal) {
             return $this->registerPage(typed: $typed, wrong: [$refusal->field => $refusal->getMessage()]);
         }
 
-        return new RedirectResponse($this->urls->generate(self::SHOW, ['uuid' => $property->getUuid()]));
+        return new RedirectResponse($this->urls->generate(self::CONFIGURE, ['uuid' => $property->getUuid()]));
     }
 
     #[Route('/properties/{uuid}', name: self::SHOW, requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
@@ -95,6 +100,8 @@ final readonly class PropertyController
 
         return new Response($this->twig->render('@VivutioProperty/properties/show.html.twig', [
             'property' => $property,
+            'posted' => $this->directory->postedAt($property),
+            'departments' => $this->directory->departmentsAt($property),
             'saved' => $saved,
         ]));
     }
@@ -107,18 +114,18 @@ final readonly class PropertyController
         Property $property,
     ): Response {
         if (!$request->isMethod('POST')) {
-            return $this->configurePage($property, ['name' => $property->getName(), 'location' => $property->getLocation(), 'units' => (string) $property->getUnits(), 'unit' => $property->getUnit()->value]);
+            return $this->configurePage($property, $this->stored($property));
         }
 
-        $typed = $this->typed($request);
+        $details = $this->typed($request);
         if (!$this->tokens->isTokenValid(new CsrfToken('property_configure', $request->getPayload()->getString('_token')))) {
-            return $this->configurePage($property, $typed, expired: true);
+            return $this->configurePage($property, $details, expired: true);
         }
 
         try {
-            $this->service->change($property, $typed['name'], $typed['location'], (int) $typed['units'], $typed['unit']);
+            $this->service->change($property, $details);
         } catch (InvalidPropertyException $refusal) {
-            return $this->configurePage($property, $typed, wrong: [$refusal->field => $refusal->getMessage()]);
+            return $this->configurePage($property, $details, wrong: [$refusal->field => $refusal->getMessage()]);
         }
 
         $session = $request->getSession();
@@ -129,14 +136,50 @@ final readonly class PropertyController
         return new RedirectResponse($this->urls->generate(self::SHOW, ['uuid' => $property->getUuid()]));
     }
 
-    /**
-     * @return array{name: string, location: string, units: string, unit: string}
-     */
-    private function typed(Request $request): array
+    private function typed(Request $request): PropertyDetails
     {
         $payload = $request->getPayload();
 
-        return ['name' => $payload->getString('name'), 'location' => $payload->getString('location'), 'units' => $payload->getString('units'), 'unit' => $payload->getString('unit')];
+        return new PropertyDetails(
+            name: $payload->getString('name'),
+            type: $payload->getString('type'),
+            location: $payload->getString('location'),
+            status: $payload->getString('status'),
+            latitude: $payload->getString('latitude'),
+            longitude: $payload->getString('longitude'),
+            grading: $payload->getString('grading'),
+            summary: $payload->getString('summary'),
+            description: $payload->getString('description'),
+            email: $payload->getString('email'),
+            phone: $payload->getString('phone'),
+            website: $payload->getString('website'),
+            checkIn: $payload->getString('check_in'),
+            checkOut: $payload->getString('check_out'),
+            infantsUpTo: $payload->getString('infants_up_to'),
+            childrenUpTo: $payload->getString('children_up_to'),
+        );
+    }
+
+    private function stored(Property $property): PropertyDetails
+    {
+        return new PropertyDetails(
+            name: $property->getName(),
+            type: $property->getType()->value,
+            location: $property->getLocation(),
+            status: $property->getStatus()->value,
+            latitude: (string) $property->getLatitude(),
+            longitude: (string) $property->getLongitude(),
+            grading: (string) $property->getGrading(),
+            summary: (string) $property->getSummary(),
+            description: (string) $property->getDescription(),
+            email: (string) $property->getEmail(),
+            phone: (string) $property->getPhone(),
+            website: (string) $property->getWebsite(),
+            checkIn: (string) $property->getCheckInFrom()?->format('H:i'),
+            checkOut: (string) $property->getCheckOutBy()?->format('H:i'),
+            infantsUpTo: (string) $property->getInfantsUpTo(),
+            childrenUpTo: (string) $property->getChildrenUpTo(),
+        );
     }
 
     /**
@@ -147,7 +190,8 @@ final readonly class PropertyController
     {
         return new Response($this->twig->render('@VivutioProperty/properties/index.html.twig', [
             'properties' => $this->properties->findBy([], ['name' => 'ASC']),
-            'units' => UnitEnum::cases(),
+            'posted' => $this->directory->postedCounts(),
+            'types' => PropertyTypeEnum::cases(),
             'typed' => $typed,
             'wrong' => $wrong,
             'expired' => $expired,
@@ -155,15 +199,15 @@ final readonly class PropertyController
     }
 
     /**
-     * @param array<string, string> $typed
      * @param array<string, string> $wrong
      */
-    private function configurePage(Property $property, array $typed, array $wrong = [], bool $expired = false): Response
+    private function configurePage(Property $property, PropertyDetails $details, array $wrong = [], bool $expired = false): Response
     {
         return new Response($this->twig->render('@VivutioProperty/properties/configure.html.twig', [
             'property' => $property,
-            'units' => UnitEnum::cases(),
-            'typed' => $typed,
+            'types' => PropertyTypeEnum::cases(),
+            'statuses' => $property->getStatus()->choices(),
+            'typed' => $details->typed(),
             'wrong' => $wrong,
             'expired' => $expired,
         ]), [] === $wrong && !$expired ? Response::HTTP_OK : Response::HTTP_UNPROCESSABLE_ENTITY);

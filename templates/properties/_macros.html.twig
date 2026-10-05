@@ -1,0 +1,12 @@
+{# What a property's facts read as, the same on its page and in the register. #}
+{% macro status_chip(status) -%}
+    <span class="chip{{ {open: ' ok', closed: ' warn', draft: '', archived: ''}[status.value] }}">{{ status.label }}</span>
+{%- endmacro %}
+
+{% macro ages(property) -%}
+    {%- if property.infantsUpTo is null -%}Not set: every guest is an adult{%- else -%}Infants up to {{ property.infantsUpTo }}, children {{ property.infantsUpTo + 1 }} to {{ property.childrenUpTo }}{%- endif -%}
+{%- endmacro %}
+
+{% macro hint(name, wrong, otherwise) -%}
+    {%- if wrong[name] is defined or otherwise %}<div class="hint"><span>{{ wrong[name] ?? otherwise }}</span></div>{% endif -%}
+{%- endmacro %}
