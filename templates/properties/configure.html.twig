@@ -75,5 +75,11 @@
             <div class="field{{ wrong.website is defined ? ' wrong' }}"><label for="property-website">Website</label><input class="input" id="property-website" name="website" type="url" value="{{ typed.website }}">{{ properties_.hint('website', wrong, null) }}</div>
         </div>
     {{ cards.foot('Save contact') }}
+{% if is_granted('identity.delete', property) %}
+<section class="panel" data-danger>
+    <header class="panel-head"><h2>Danger</h2><p>Super Admins alone</p></header>
+    <div class="action"><div><b>Delete</b><span>The property and everything under it: room types, seasons, rates, closures and bookings. Counted before anything goes</span></div><a class="button small danger" href="{{ path('property_delete', {uuid: property.uuid}) }}">Delete…</a></div>
+</section>
+{% endif %}
 </div>
 {% endblock %}

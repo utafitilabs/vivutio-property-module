@@ -60,6 +60,34 @@ Checks: `properties.configure`
 | Admin | allowed: Configure Probed camp · vivutio |
 | Super Admin | allowed: Configure Probed camp · vivutio |
 
+## property_delete: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/delete
+
+Checks: `identity.delete`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | refused |
+| Super Admin | allowed: Delete Probed camp · vivutio |
+
+## property_delete: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/delete
+
+Checks: `identity.delete`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | refused |
+| Super Admin | answered 422 |
+
 ## property_configure: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/configure
 
 Checks: `properties.configure`

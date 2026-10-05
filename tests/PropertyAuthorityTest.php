@@ -21,6 +21,7 @@ use Vivutio\Property\Controller\BookingController;
 use Vivutio\Property\Controller\CalendarController;
 use Vivutio\Property\Controller\CancellationController;
 use Vivutio\Property\Controller\PropertyController;
+use Vivutio\Property\Controller\PropertyDeletionController;
 use Vivutio\Property\Controller\RateController;
 use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
@@ -68,6 +69,9 @@ final class PropertyAuthorityTest extends AuthorityTestCase
             new Probe(PropertyController::ADD, 'POST', '/properties', ['name' => 'Added by a probe', 'type' => 'tented_camp', 'location' => 'Tarangire, Tanzania'], formAt: '/properties'),
             new Probe(PropertyController::SHOW, 'GET', self::PROPERTY),
             new Probe(PropertyController::CONFIGURE, 'GET', self::PROPERTY.'/configure'),
+            // A wrong reference typed, so the property is still there for the probes after.
+            new Probe(PropertyDeletionController::DELETE, 'GET', self::PROPERTY.'/delete'),
+            new Probe(PropertyDeletionController::DELETE, 'POST', self::PROPERTY.'/delete', ['reference' => 'not it'], formAt: self::PROPERTY.'/delete'),
             new Probe(PropertyController::CONFIGURE, 'POST', self::PROPERTY.'/configure', ['name' => 'Probed camp', 'type' => 'tented_camp', 'location' => 'Central Serengeti, Tanzania', 'status' => 'draft'], formAt: self::PROPERTY.'/configure'),
             new Probe(RoomController::ROOMS, 'GET', self::PROPERTY.'/rooms'),
             new Probe(RoomController::ADD, 'POST', self::PROPERTY.'/rooms', ['name' => 'Added by a probe', 'sleeps' => '2', 'adults' => '2', 'count' => '4'], formAt: self::PROPERTY.'/rooms'),

@@ -15,8 +15,10 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Vivutio\Bundle\IdentityBundle\Repository\DepartmentRepository;
 use Vivutio\Bundle\IdentityBundle\Repository\UserRepository;
+use Vivutio\Bundle\IdentityBundle\Service\DeletionPageService;
 use Vivutio\Contracts\Access\ConcernSourceInterface;
 use Vivutio\Contracts\Access\ScopeSourceInterface;
+use Vivutio\Contracts\Deletion\DeletionContributorInterface;
 use Vivutio\Contracts\Identity\PositionCardFieldInterface;
 use Vivutio\Contracts\Partner\PartnerDirectoryInterface;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
@@ -30,9 +32,11 @@ use Vivutio\Property\Controller\BookingController;
 use Vivutio\Property\Controller\CalendarController;
 use Vivutio\Property\Controller\CancellationController;
 use Vivutio\Property\Controller\PropertyController;
+use Vivutio\Property\Controller\PropertyDeletionController;
 use Vivutio\Property\Controller\RateController;
 use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
+use Vivutio\Property\Deletion\PropertyDeletion;
 use Vivutio\Property\Identity\PropertyPositionCard;
 use Vivutio\Property\Place\PropertyPlaces;
 use Vivutio\Property\Place\PropertyReachSource;
@@ -309,4 +313,13 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->public();
     $services->alias(PropertyController::class, 'property.controller.properties')->public();
+
+    // A property deleted by a Super Admin, on the core's delete page.
+    $services->set('property.deletion', PropertyDeletion::class)
+        ->args([service('doctrine.orm.entity_manager')])
+        ->tag(DeletionContributorInterface::TAG);
+    $services->set('property.controller.deletion', PropertyDeletionController::class)
+        ->args([service(DeletionPageService::class), service('router')])
+        ->public();
+    $services->alias(PropertyDeletionController::class, 'property.controller.deletion')->public();
 };
