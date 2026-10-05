@@ -190,7 +190,11 @@ final readonly class SeasonController
             return $this->configurePage($season, expired: true);
         }
 
-        $this->service->removePeriod($period);
+        try {
+            $this->service->removePeriod($period);
+        } catch (InvalidSeasonException $refusal) {
+            return $this->configurePage($season, wrong: [$refusal->field => $refusal->getMessage()]);
+        }
         $this->say($request, 'The period is removed.');
 
         return $this->toSeason($season);

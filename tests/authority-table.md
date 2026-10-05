@@ -228,6 +228,62 @@ Checks: `properties.configure`
 | Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/configure |
 | Super Admin | not found |
 
+## property_rates: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates?year=2026
+
+Checks: `properties.read`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: Rates · Probed camp · vivutio |
+| Super Admin | allowed: Rates · Probed camp · vivutio |
+
+## property_rates_setup: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates/setup
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates |
+
+## property_rates_save: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates |
+
+## property_rate_terms_save: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates/terms
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates |
+
 ## property_season_remove: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e05/remove
 
 Checks: `properties.configure`

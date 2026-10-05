@@ -22,15 +22,20 @@ use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Property\Access\PropertyConcerns;
 use Vivutio\Property\Access\PropertyScopes;
 use Vivutio\Property\Controller\PropertyController;
+use Vivutio\Property\Controller\RateController;
 use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
 use Vivutio\Property\Place\PropertyPlaces;
 use Vivutio\Property\Repository\PropertyRepository;
+use Vivutio\Property\Repository\RateRepository;
+use Vivutio\Property\Repository\RateTermsRepository;
 use Vivutio\Property\Repository\RoomTypeRepository;
 use Vivutio\Property\Repository\SeasonPeriodRepository;
 use Vivutio\Property\Repository\SeasonRepository;
 use Vivutio\Property\Service\PropertyDirectoryService;
 use Vivutio\Property\Service\PropertyService;
+use Vivutio\Property\Service\RateQuoteService;
+use Vivutio\Property\Service\RateService;
 use Vivutio\Property\Service\RoomTypeService;
 use Vivutio\Property\Service\SeasonCalendarService;
 use Vivutio\Property\Service\SeasonService;
@@ -97,7 +102,7 @@ return static function (ContainerConfigurator $container): void {
         ->tag('doctrine.repository_service');
 
     $services->set('property.seasons', SeasonService::class)
-        ->args([service('doctrine.orm.entity_manager'), service(SeasonRepository::class), service(SeasonPeriodRepository::class)]);
+        ->args([service('doctrine.orm.entity_manager'), service(SeasonRepository::class), service(SeasonPeriodRepository::class), service(RateRepository::class)]);
     $services->alias(SeasonService::class, 'property.seasons');
 
     $services->set('property.season_calendar', SeasonCalendarService::class)
@@ -115,6 +120,44 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->public();
     $services->alias(SeasonController::class, 'property.controller.seasons')->public();
+
+    $services->set(RateRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+    $services->set(RateTermsRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+
+    $services->set('property.rates', RateService::class)
+        ->args([
+            service('doctrine.orm.entity_manager'),
+            service(RateRepository::class),
+            service(RateTermsRepository::class),
+            service(RoomTypeRepository::class),
+            service(SeasonPeriodRepository::class),
+        ]);
+    $services->alias(RateService::class, 'property.rates');
+
+    // What a stay costs: the one place a stay is priced, for this tab and for bookings.
+    $services->set('property.rate_quotes', RateQuoteService::class)
+        ->args([service(RateRepository::class), service(RateTermsRepository::class), service(SeasonPeriodRepository::class)]);
+    $services->alias(RateQuoteService::class, 'property.rate_quotes');
+
+    $services->set('property.controller.rates', RateController::class)
+        ->args([
+            service('twig'),
+            service('property.rates'),
+            service('property.rate_quotes'),
+            service(RateRepository::class),
+            service(RateTermsRepository::class),
+            service(RoomTypeRepository::class),
+            service(SeasonPeriodRepository::class),
+            service('property.directory'),
+            service('security.csrf.token_manager'),
+            service('router'),
+        ])
+        ->public();
+    $services->alias(RateController::class, 'property.controller.rates')->public();
 
     $services->set('property.directory', PropertyDirectoryService::class)
         ->args([service(UserRepository::class), service(DepartmentRepository::class), service(RoomTypeRepository::class)]);

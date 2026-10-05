@@ -45,13 +45,20 @@ and the pages are gone. The migration builds its one table.
   shoulder, high, peak), with the dated periods it runs, drawn as a year of
   months. No night is in two seasons; nights in none are counted and shown, as
   they have no rate. A year's periods are repeated a year later in one step.
+- **Rates**, on a property's Rates tab: one currency, priced per person
+  sharing or per room, on the board bases it sells; a year's sheet for each,
+  room types down and season periods across; each period's terms, what a guest
+  alone, a third adult, a child and an infant pay as a share of the sharing
+  rate (a term left empty is not sold); and what a stay costs, priced night by
+  night by the one service bookings will use. A period with rates is kept, and
+  what the rates mean is not changed under them.
 - **A place to post people**: through the core's place contract, every
   property but an archived one is offered on a person's Position card beside
   the offices, and departments may sit at it.
 - **The `property` scope**, one or more named properties, which a grant may be
   limited to.
 
-Rates and the availability calendar arrive next, each in its own release.
+The availability calendar arrives next.
 
 ## Who may do what
 

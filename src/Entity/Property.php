@@ -18,6 +18,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Vivutio\Bundle\IdentityBundle\Entity\Trait\TimestampableTrait;
 use Vivutio\Bundle\IdentityBundle\Entity\Trait\UuidTrait;
 use Vivutio\Contracts\Place\PlaceInterface;
+use Vivutio\Property\Enum\PricingEnum;
 use Vivutio\Property\Enum\PropertyStatusEnum;
 use Vivutio\Property\Enum\PropertyTypeEnum;
 use Vivutio\Property\Repository\PropertyRepository;
@@ -104,6 +105,17 @@ class Property implements PlaceInterface
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
     private ?int $childrenUpTo = null;
+
+    /** The one currency its rates are in, ISO 4217: USD. Null until its rate sheet is set up. */
+    #[ORM\Column(length: 3, nullable: true)]
+    private ?string $currency = null;
+
+    #[ORM\Column(length: 16, enumType: PricingEnum::class)]
+    private PricingEnum $pricing = PricingEnum::PerPerson;
+
+    /** @var list<string> the board bases it sells, each a BoardBasisEnum value */
+    #[ORM\Column(type: Types::JSON)]
+    private array $boards = [];
 
     public function getId(): ?int
     {
@@ -298,6 +310,48 @@ class Property implements PlaceInterface
     public function setChildrenUpTo(?int $childrenUpTo): static
     {
         $this->childrenUpTo = $childrenUpTo;
+
+        return $this;
+    }
+
+    public function getCurrency(): ?string
+    {
+        return $this->currency;
+    }
+
+    public function setCurrency(?string $currency): static
+    {
+        $this->currency = $currency;
+
+        return $this;
+    }
+
+    public function getPricing(): PricingEnum
+    {
+        return $this->pricing;
+    }
+
+    public function setPricing(PricingEnum $pricing): static
+    {
+        $this->pricing = $pricing;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getBoards(): array
+    {
+        return $this->boards;
+    }
+
+    /**
+     * @param list<string> $boards
+     */
+    public function setBoards(array $boards): static
+    {
+        $this->boards = $boards;
 
         return $this;
     }

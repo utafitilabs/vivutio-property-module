@@ -1,0 +1,127 @@
+{# A property's Rates tab: its rate sheet's setup; for the year, a sheet for
+   each board basis it sells, room types down and season periods across; each
+   period's terms; and what a stay costs, priced as a booking will be. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+
+{% block title %}Rates · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% set term_labels = {single: 'A guest alone', third_adult: 'A third adult', child_sharing: 'A child sharing', child_own_room: 'A child alone in a room', infant: 'An infant'} %}
+
+{% block page %}
+{%- set may = door('properties.configure') -%}
+{{ properties_.head(property, band) }}
+{{ properties_.tabs(property, 'rates') }}
+<div class="intro">
+    <p>{% if property.currency %}What a night costs, {{ property.pricing.label|lower }}, in {{ property.currency }}{% else %}What a night costs, once its rate sheet is set up{% endif %}</p>
+    <div class="actions">
+        <a class="button outline" href="{{ path('property_rates', {uuid: property.uuid, year: year - 1}) }}">{{ icons.icon('left', 15) }} {{ year - 1 }}</a>
+        <span class="button quiet" aria-current="page">{{ year }}</span>
+        <a class="button outline" href="{{ path('property_rates', {uuid: property.uuid, year: year + 1}) }}">{{ year + 1 }} {{ icons.paths('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', 15) }}</a>
+    </div>
+</div>
+
+{% if said %}<div class="notice" role="status">{{ icons.icon('check') }}<span>{{ said }}</span></div>{% endif %}
+{% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Try again.</span></div>{% endif %}
+{% if not property.currency %}<div class="notice warn" role="status">{{ icons.icon('alert') }}<span>Choose the currency, what a rate is the price of and the board bases it sells, then set its rates.</span></div>{% endif %}
+
+<div class="stack">
+    {% if may %}
+    <form class="panel" method="post" action="{{ path('property_rates_setup', {uuid: property.uuid}) }}" novalidate>
+        <header class="panel-head"><h2>Rate sheet</h2><p>One currency, one way of pricing, and the board bases it sells</p></header>
+        <input type="hidden" name="_token" value="{{ csrf_token('property_rates_setup') }}"><input type="hidden" name="year" value="{{ year }}">
+        <div class="grid-2">
+            <div class="field{{ wrong.currency is defined ? ' wrong' }}"><label for="rates-currency">Currency</label><input class="input" id="rates-currency" name="currency" value="{{ setup.currency }}" maxlength="3">{{ properties_.hint('currency', wrong, 'Its three-letter code: USD') }}</div>
+            <div class="field{{ wrong.pricing is defined ? ' wrong' }}"><label for="rates-pricing">A rate is the price of</label><select class="select" id="rates-pricing" name="pricing">{% for pricing in pricings %}<option value="{{ pricing.value }}"{{ pricing.value == setup.pricing ? ' selected' }}>{{ pricing.label }}</option>{% endfor %}</select>{{ properties_.hint('pricing', wrong, 'Per person sharing: a guest alone, a third adult and children pay the season\'s terms') }}</div>
+        </div>
+        <div class="field{{ wrong.boards is defined ? ' wrong' }}"><span class="label">Board bases it sells</span>
+            <div class="grid-3">{% for basis in boards %}<label class="check"><input type="checkbox" name="boards[]" value="{{ basis.value }}"{{ basis.value in setup.boards ? ' checked' }}> {{ basis.label }}</label>{% endfor %}</div>
+            {{ properties_.hint('boards', wrong, null) }}
+        </div>
+        <footer class="panel-foot"><span class="state">No changes</span><button type="submit" class="button main">Save the rate sheet</button></footer>
+    </form>
+    {% endif %}
+
+    {% if property.currency %}
+        {% if periods is empty or rooms is empty %}
+            <section class="panel"><div class="empty"><b>Nothing to price in {{ year }} yet</b><span>{{ rooms is empty ? 'Add a room type on the Rooms tab.' : 'No season runs in ' ~ year ~ ': set its periods on the Seasons tab.' }}</span></div></section>
+        {% else %}
+        {% for basis in sold %}
+            <section class="panel list" data-sheet="{{ basis.value }}">
+                <header class="panel-head"><h2>{{ basis.label }}</h2><p>{{ property.pricing.value == 'per_room' ? 'Per room per night' : 'Per person per night, sharing' }}, in {{ property.currency }}</p></header>
+                {% set mine = wrong|filter((v, k) => k starts with 'amounts[') %}
+                {% if mine is not empty and amounts[basis.value] is defined %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ mine|first }}</span></div>{% endif %}
+                {% if may %}<form method="post" action="{{ path('property_rates_save', {uuid: property.uuid}) }}" novalidate><input type="hidden" name="_token" value="{{ csrf_token('property_rates_save') }}"><input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="board" value="{{ basis.value }}">{% endif %}
+                <table class="table">
+                    <thead><tr><th>Room type</th>{% for period in periods %}<th data-period>{{ period.season.name }} <small>{{ properties_.span(period) }}</small></th>{% endfor %}</tr></thead>
+                    <tbody>
+                    {% for room in rooms %}
+                        <tr data-room="{{ room.name }}"><td><b>{{ room.name }}</b></td>
+                        {% for period in periods %}
+                            {%- set name = 'amounts[' ~ room.uuid ~ '][' ~ period.uuid ~ ']' -%}
+                            {%- set amount = amounts[basis.value][room.uuid ~ ''][period.uuid ~ ''] ?? '' -%}
+                            <td data-rate{% if wrong[name] is defined %} class="wrong"{% endif %}>{% if may %}<input class="input" name="{{ name }}" value="{{ amount }}" inputmode="decimal" aria-label="{{ room.name }}, {{ period.season.name }}">{% elseif amount != '' %}{{ property.currency }} {{ amount|number_format(2) }}{% else %}No rate{% endif %}</td>
+                        {% endfor %}</tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% if may %}<footer class="panel-foot"><span class="state">An empty cell has no rate</span><button type="submit" class="button main">Save the rates</button></footer></form>{% endif %}
+            </section>
+        {% endfor %}
+
+        {% if property.pricing.value == 'per_person' %}
+            <section class="panel list" data-terms>
+                <header class="panel-head"><h2>Terms</h2><p>What each pays, as a share of the sharing rate; an empty term is not sold</p></header>
+                {% set mine = wrong|filter((v, k) => k starts with 'terms[') %}
+                {% if mine is not empty %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ mine|first }}</span></div>{% endif %}
+                {% if may %}<form method="post" action="{{ path('property_rate_terms_save', {uuid: property.uuid}) }}" novalidate><input type="hidden" name="_token" value="{{ csrf_token('property_rate_terms_save') }}"><input type="hidden" name="year" value="{{ year }}">{% endif %}
+                <table class="table">
+                    <thead><tr><th>Season</th>{% for term in term_names %}<th>{{ term_labels[term] }}</th>{% endfor %}</tr></thead>
+                    <tbody>
+                    {% for period in periods %}
+                        <tr data-terms-of="{{ period.season.name }}"><td><b>{{ period.season.name }}</b> <small>{{ properties_.span(period) }}</small></td>
+                        {% for term in term_names %}
+                            {%- set name = 'terms[' ~ period.uuid ~ '][' ~ term ~ ']' -%}
+                            {%- set share = terms[period.uuid ~ ''][term] ?? '' -%}
+                            <td{% if wrong[name] is defined %} class="wrong"{% endif %}>{% if may %}<input class="input" name="{{ name }}" value="{{ share }}" inputmode="numeric" aria-label="{{ term_labels[term] }}, {{ period.season.name }}, per cent">{% elseif share != '' %}{{ share }}%{% else %}Not sold{% endif %}</td>
+                        {% endfor %}</tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% if may %}<footer class="panel-foot"><span class="state">In per cent: 140 is the rate and two fifths more</span><button type="submit" class="button main">Save the terms</button></footer></form>{% endif %}
+            </section>
+        {% endif %}
+        {% endif %}
+
+        <form class="panel" method="get" action="{{ path('property_rates', {uuid: property.uuid}) }}">
+            <header class="panel-head"><h2>What a stay costs</h2><p>One room, priced night by night as a booking will be</p></header>
+            <input type="hidden" name="year" value="{{ year }}">
+            <div class="grid-3">
+                <div class="field"><label for="quote-room">Room type</label><select class="select" id="quote-room" name="room">{% for room in rooms %}<option value="{{ room.uuid }}"{{ (room.uuid ~ '') == (asked.room ?? '') ? ' selected' }}>{{ room.name }}</option>{% endfor %}</select></div>
+                <div class="field"><label for="quote-board">Board basis</label><select class="select" id="quote-board" name="board">{% for basis in sold %}<option value="{{ basis.value }}"{{ basis.value == (asked.board ?? '') ? ' selected' }}>{{ basis.label }}</option>{% endfor %}</select></div>
+                <div class="field"><label for="quote-arrival">Arriving</label><input class="input" id="quote-arrival" name="arrival" type="date" value="{{ asked.arrival ?? '' }}"></div>
+            </div>
+            <div class="grid-3">
+                <div class="field"><label for="quote-nights">Nights</label><input class="input" id="quote-nights" name="nights" type="number" min="1" value="{{ asked.nights ?? 1 }}"></div>
+                <div class="field"><label for="quote-adults">Adults</label><input class="input" id="quote-adults" name="adults" type="number" min="0" value="{{ asked.adults ?? 2 }}"></div>
+                <div class="field"><label for="quote-children">Children, infants</label><div class="grid-2"><input class="input" id="quote-children" name="children" type="number" min="0" value="{{ asked.children ?? 0 }}" aria-label="Children"><input class="input" name="infants" type="number" min="0" value="{{ asked.infants ?? 0 }}" aria-label="Infants"></div></div>
+            </div>
+            {% if quote or refused %}
+                <div data-quote>
+                    {% if quote %}
+                        {% for night in quote.nights %}
+                            <div class="fact" data-night="{{ night.date|date('j M Y') }}"><span>{{ night.date|date('D j M Y') }} &middot; {{ night.season }} &middot; {% for label, cents in night.lines %}{{ label }}{{ not loop.last ? ', ' }}{% endfor %}</span><b>{{ quote.says(night.total) }}</b></div>
+                        {% endfor %}
+                        <div class="fact"><span><b>{{ quote.nights|length }} {{ quote.nights|length == 1 ? 'night' : 'nights' }}</b></span><b data-total>{{ quote.says(quote.total) }}</b></div>
+                    {% else %}
+                        <div class="notice warn" role="status">{{ icons.icon('alert') }}<span>{{ refused }}</span></div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <footer class="panel-foot"><span class="state"></span><button type="submit" class="button main">Price the stay</button></footer>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

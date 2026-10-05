@@ -18,6 +18,7 @@ use Symfony\Component\Uid\Uuid;
 use Vivutio\Bundle\IdentityBundle\Test\AuthorityTestCase;
 use Vivutio\Bundle\IdentityBundle\Test\Probe;
 use Vivutio\Property\Controller\PropertyController;
+use Vivutio\Property\Controller\RateController;
 use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
 use Vivutio\Property\Entity\Property;
@@ -44,6 +45,7 @@ final class PropertyAuthorityTest extends AuthorityTestCase
     private const string SEASON_UUID = '0199a6f0-9e01-7e10-8000-000000009e03';
     private const string SEASON = self::PROPERTY.'/seasons/'.self::SEASON_UUID;
     private const string PERIOD_UUID = '0199a6f0-9e01-7e10-8000-000000009e04';
+    private const string PRICED_PERIOD_UUID = '0199a6f0-9e01-7e10-8000-000000009e06';
     private const string EMPTY_SEASON = self::PROPERTY.'/seasons/0199a6f0-9e01-7e10-8000-000000009e05';
 
     protected static function getKernelClass(): string
@@ -70,6 +72,10 @@ final class PropertyAuthorityTest extends AuthorityTestCase
             new Probe(SeasonController::CONFIGURE, 'POST', self::SEASON.'/configure', ['name' => 'Probed season', 'kind' => 'peak'], formAt: self::SEASON.'/configure'),
             new Probe(SeasonController::ADD_PERIOD, 'POST', self::SEASON.'/periods', ['starts' => '2028-06-01', 'ends' => '2028-10-31'], formAt: self::SEASON.'/configure'),
             new Probe(SeasonController::REMOVE_PERIOD, 'POST', self::SEASON.'/periods/'.self::PERIOD_UUID.'/remove', formAt: self::SEASON.'/configure'),
+            new Probe(RateController::RATES, 'GET', self::PROPERTY.'/rates?year=2026'),
+            new Probe(RateController::SETUP, 'POST', self::PROPERTY.'/rates/setup', ['currency' => 'USD', 'pricing' => 'per_person', 'boards' => ['full_board'], 'year' => '2026'], formAt: self::PROPERTY.'/rates?year=2026'),
+            new Probe(RateController::SAVE, 'POST', self::PROPERTY.'/rates', ['year' => '2026', 'board' => 'full_board', 'amounts' => [self::ROOM_UUID => [self::PRICED_PERIOD_UUID => '310']]], formAt: self::PROPERTY.'/rates?year=2026'),
+            new Probe(RateController::TERMS, 'POST', self::PROPERTY.'/rates/terms', ['year' => '2026', 'terms' => [self::PRICED_PERIOD_UUID => ['single' => '130']]], formAt: self::PROPERTY.'/rates?year=2026'),
             new Probe(SeasonController::REMOVE, 'POST', self::EMPTY_SEASON.'/remove', formAt: self::EMPTY_SEASON.'/configure'),
         ];
     }
@@ -104,6 +110,9 @@ final class PropertyAuthorityTest extends AuthorityTestCase
 
         $season = (new Season($camp))->setName('Probed season')->setKind(SeasonKindEnum::High)->setUuid(Uuid::fromString(self::SEASON_UUID));
         $entityManager->persist($season);
+        $green = (new Season($camp))->setName('Probed green season')->setKind(SeasonKindEnum::Low);
+        $entityManager->persist($green);
+        $entityManager->persist((new SeasonPeriod($green, new \DateTimeImmutable('2026-11-01'), new \DateTimeImmutable('2027-05-31')))->setUuid(Uuid::fromString(self::PRICED_PERIOD_UUID)));
         $entityManager->persist((new Season($camp))->setName('Probed empty season')->setKind(SeasonKindEnum::Low)->setUuid(Uuid::fromString('0199a6f0-9e01-7e10-8000-000000009e05')));
         $entityManager->persist((new SeasonPeriod($season, new \DateTimeImmutable('2026-06-01'), new \DateTimeImmutable('2026-10-31')))->setUuid(Uuid::fromString(self::PERIOD_UUID)));
     }

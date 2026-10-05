@@ -20,6 +20,7 @@ use Vivutio\Property\Entity\SeasonPeriod;
 use Vivutio\Property\Enum\SeasonKindEnum;
 use Vivutio\Property\Exception\InvalidSeasonException;
 use Vivutio\Property\Model\YearRepeated;
+use Vivutio\Property\Repository\RateRepository;
 use Vivutio\Property\Repository\SeasonPeriodRepository;
 use Vivutio\Property\Repository\SeasonRepository;
 
@@ -35,6 +36,7 @@ final readonly class SeasonService
         private EntityManagerInterface $entityManager,
         private SeasonRepository $seasons,
         private SeasonPeriodRepository $periods,
+        private RateRepository $rates,
     ) {
     }
 
@@ -90,8 +92,18 @@ final readonly class SeasonService
         return $period;
     }
 
+    /**
+     * A period is removed while nothing is priced by it.
+     *
+     * @throws InvalidSeasonException
+     */
     public function removePeriod(SeasonPeriod $period): void
     {
+        $priced = $this->rates->count(['period' => $period]);
+        if ($priced > 0) {
+            throw new InvalidSeasonException('season', \sprintf('%s has %d %s on the Rates tab: clear them before the period is removed.', self::span($period->getStarts(), $period->getEnds()), $priced, 1 === $priced ? 'rate' : 'rates'));
+        }
+
         $period->getSeason()->getPeriods()->removeElement($period);
         $this->entityManager->remove($period);
         $this->entityManager->flush();
