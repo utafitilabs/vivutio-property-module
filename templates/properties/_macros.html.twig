@@ -14,7 +14,7 @@
 {# A property's tabs, each its own address; more join as their features do. #}
 {% macro tabs(property, here) -%}
     <nav class="tabs" aria-label="{{ property.name }}">
-        {%- for tab in [{key: 'overview', label: 'Overview', route: 'property_show'}, {key: 'rooms', label: 'Rooms', route: 'property_rooms'}] -%}
+        {%- for tab in [{key: 'overview', label: 'Overview', route: 'property_show'}, {key: 'rooms', label: 'Rooms', route: 'property_rooms'}, {key: 'seasons', label: 'Seasons', route: 'property_seasons'}] -%}
             <a href="{{ path(tab.route, {uuid: property.uuid}) }}"{{ tab.key == here ? ' aria-current="page"' }}>{{ tab.label }}</a>
         {%- endfor -%}
     </nav>
@@ -43,4 +43,9 @@
 {# What a room type sleeps, as its row says it. #}
 {% macro sleeps(room) -%}
     Sleeps {{ room.sleeps }}{% if room.adults < room.sleeps %}, {{ room.adults }} {{ room.adults == 1 ? 'adult' : 'adults' }} at most{% endif %}
+{%- endmacro %}
+
+{# When a period runs: "1 Jun – 31 Oct 2026", or "1 Nov 2026 – 31 May 2027" across a year's end. #}
+{% macro span(period) -%}
+    {%- if period.starts|date('Y') == period.ends|date('Y') -%}{{ period.starts|date('j M') }} – {{ period.ends|date('j M Y') }}{%- else -%}{{ period.starts|date('j M Y') }} – {{ period.ends|date('j M Y') }}{%- endif -%}
 {%- endmacro %}

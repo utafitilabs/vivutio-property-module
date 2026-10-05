@@ -129,3 +129,115 @@ Checks: `properties.configure`
 | Staff holding all but the pair | refused |
 | Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms |
 | Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms |
+
+## property_seasons: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons?year=2026
+
+Checks: `properties.read`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: Seasons · Probed camp · vivutio |
+| Super Admin | allowed: Seasons · Probed camp · vivutio |
+
+## property_season_add: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/{new}/configure |
+| Super Admin | answered 422 |
+
+## property_seasons_repeat: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/repeat
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons |
+
+## property_season_configure: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/configure
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: Configure Probed season · Probed camp · vivutio |
+| Super Admin | allowed: Configure Probed season · Probed camp · vivutio |
+
+## property_season_configure: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/configure
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/configure |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/configure |
+
+## property_season_period_add: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/periods
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/configure |
+| Super Admin | answered 422 |
+
+## property_season_period_remove: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/periods/0199a6f0-9e01-7e10-8000-000000009e04/remove
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/configure |
+| Super Admin | not found |
+
+## property_season_remove: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e05/remove
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons |
+| Super Admin | not found |

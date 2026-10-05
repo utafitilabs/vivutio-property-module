@@ -1,0 +1,74 @@
+{# A property's Seasons tab: a year of its calendar, night by night in its
+   season, the seasons busiest first with the periods they run, and, for the
+   tiers, adding one and repeating a year a year later. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+
+{% block title %}Seasons · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+{%- set year = calendar.year -%}
+{{ properties_.head(property, band) }}
+{{ properties_.tabs(property, 'seasons') }}
+<div class="intro">
+    <p>When each season runs; a night's rate is its season's</p>
+    <div class="actions">
+        {% if year > first_year %}<a class="button outline" href="{{ path('property_seasons', {uuid: property.uuid, year: year - 1}) }}">{{ icons.icon('left', 15) }} {{ year - 1 }}</a>{% endif %}
+        <span class="button quiet" aria-current="page">{{ year }}</span>
+        {% if year < last_year %}<a class="button outline" href="{{ path('property_seasons', {uuid: property.uuid, year: year + 1}) }}">{{ year + 1 }} {{ icons.paths('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', 15) }}</a>{% endif %}
+        {% if door('properties.configure') and year < last_year %}
+            <form method="post" action="{{ path('property_seasons_repeat', {uuid: property.uuid}) }}"><input type="hidden" name="_token" value="{{ csrf_token('property_seasons_repeat') }}"><input type="hidden" name="year" value="{{ year }}"><button type="submit" class="button outline">Repeat {{ year }} in {{ year + 1 }}</button></form>
+        {% endif %}
+    </div>
+</div>
+
+{% if said %}<div class="notice" role="status">{{ icons.icon('check') }}<span>{{ said }}</span></div>{% endif %}
+{% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Try again.</span></div>{% endif %}
+{% if calendar.unseasoned > 0 %}<div class="notice warn" role="status">{{ icons.icon('alert') }}<span>{{ calendar.unseasoned }} {{ calendar.unseasoned == 1 ? 'night' : 'nights' }} of {{ year }} {{ calendar.unseasoned == 1 ? 'is' : 'are' }} in no season, so {{ calendar.unseasoned == 1 ? 'it has' : 'they have' }} no rate and cannot be sold.</span></div>{% endif %}
+
+<div class="stack">
+    <section class="panel">
+        <header class="panel-head"><h2>{{ year }}</h2><p>
+            <span class="legend">{% for season in seasons %}<span><i data-tone="{{ season.kind.tone }}"></i>{{ season.name }}</span>{% endfor %}<span><i></i>No season</span></span>
+        </p></header>
+        <div class="months">
+            {% for month in calendar.months %}
+                <div class="month"><h3>{{ month.name }}</h3>
+                    <table class="days"><thead><tr>{% for day in ['M', 'T', 'W', 'T', 'F', 'S', 'S'] %}<th>{{ day }}</th>{% endfor %}</tr></thead><tbody>
+                    {% for week in month.weeks %}<tr>{% for night in week %}{% if night %}<td data-day="{{ night.date|date('Y-m-d') }}"{% if night.season %} data-season="{{ night.season.name }}" data-tone="{{ night.season.kind.tone }}" title="{{ night.season.name }}"{% endif %}>{{ night.date|date('j') }}</td>{% else %}<td></td>{% endif %}{% endfor %}</tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel list">
+        <table class="table">
+            <thead><tr><th>Season</th><th>Runs</th><th style="width:110px">Nights in {{ year }}</th>{% if door('properties.configure') %}<th style="width:110px"></th>{% endif %}</tr></thead>
+            <tbody>
+            {% for season in seasons %}
+                <tr data-season="{{ season.name }}">
+                    <td><div class="legend"><span><i data-tone="{{ season.kind.tone }}"></i><b>{{ season.name }}</b></span></div><small>{{ season.kind.label }} season</small></td>
+                    <td data-periods>{% for period in season.periods %}{{ properties_.span(period) }}{{ not loop.last ? ', ' }}{% else %}No period yet{% endfor %}</td>
+                    <td data-nights>{{ calendar.nights[season.uuid ~ ''] ?? 0 }}</td>
+                    {% if door('properties.configure') %}<td><a class="button outline" href="{{ path('property_season_configure', {uuid: property.uuid, season: season.uuid}) }}">Configure</a></td>{% endif %}
+                </tr>
+            {% else %}
+                <tr><td colspan="4"><div class="empty"><b>No seasons yet</b><span>A night is priced by its season: add the seasons this property runs.</span></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    {% if door('properties.configure') %}
+    <form class="panel" method="post" action="{{ path('property_season_add', {uuid: property.uuid}) }}" novalidate>
+        <header class="panel-head"><h2>Add a season</h2><p>Its name and how busy it is; its periods are set next</p></header>
+        <input type="hidden" name="_token" value="{{ csrf_token('property_season_add') }}">
+        {% include '@VivutioProperty/properties/_season_fields.html.twig' %}
+        <footer class="panel-foot"><span class="state"></span><button type="submit" class="button main">Add the season</button></footer>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

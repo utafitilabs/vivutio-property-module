@@ -23,12 +23,17 @@ use Vivutio\Property\Access\PropertyConcerns;
 use Vivutio\Property\Access\PropertyScopes;
 use Vivutio\Property\Controller\PropertyController;
 use Vivutio\Property\Controller\RoomController;
+use Vivutio\Property\Controller\SeasonController;
 use Vivutio\Property\Place\PropertyPlaces;
 use Vivutio\Property\Repository\PropertyRepository;
 use Vivutio\Property\Repository\RoomTypeRepository;
+use Vivutio\Property\Repository\SeasonPeriodRepository;
+use Vivutio\Property\Repository\SeasonRepository;
 use Vivutio\Property\Service\PropertyDirectoryService;
 use Vivutio\Property\Service\PropertyService;
 use Vivutio\Property\Service\RoomTypeService;
+use Vivutio\Property\Service\SeasonCalendarService;
+use Vivutio\Property\Service\SeasonService;
 use Vivutio\Property\Shell\PropertyMenu;
 
 /*
@@ -83,6 +88,33 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->public();
     $services->alias(RoomController::class, 'property.controller.rooms')->public();
+
+    $services->set(SeasonRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+    $services->set(SeasonPeriodRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+
+    $services->set('property.seasons', SeasonService::class)
+        ->args([service('doctrine.orm.entity_manager'), service(SeasonRepository::class), service(SeasonPeriodRepository::class)]);
+    $services->alias(SeasonService::class, 'property.seasons');
+
+    $services->set('property.season_calendar', SeasonCalendarService::class)
+        ->args([service(SeasonPeriodRepository::class)]);
+
+    $services->set('property.controller.seasons', SeasonController::class)
+        ->args([
+            service('twig'),
+            service('property.seasons'),
+            service(SeasonRepository::class),
+            service('property.season_calendar'),
+            service('property.directory'),
+            service('security.csrf.token_manager'),
+            service('router'),
+        ])
+        ->public();
+    $services->alias(SeasonController::class, 'property.controller.seasons')->public();
 
     $services->set('property.directory', PropertyDirectoryService::class)
         ->args([service(UserRepository::class), service(DepartmentRepository::class), service(RoomTypeRepository::class)]);

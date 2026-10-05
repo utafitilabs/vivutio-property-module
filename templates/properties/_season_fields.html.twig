@@ -1,0 +1,6 @@
+{# A season's two fields, the same on adding and on configuring. #}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+<div class="grid-2">
+    <div class="field{{ wrong.name is defined ? ' wrong' }}"><label for="season-name">Name</label><input class="input" id="season-name" name="name" value="{{ typed.name }}" required maxlength="60">{{ properties_.hint('name', wrong, 'As its rates call it: High Season, Green Season') }}</div>
+    <div class="field{{ wrong.kind is defined ? ' wrong' }}"><label for="season-kind">How busy</label><select class="select" id="season-kind" name="kind">{% for kind in kinds %}<option value="{{ kind.value }}"{{ kind.value == typed.kind ? ' selected' }}>{{ kind.label }}</option>{% endfor %}</select>{{ properties_.hint('kind', wrong, 'Its tone on the calendar follows from it') }}</div>
+</div>

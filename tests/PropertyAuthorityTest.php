@@ -19,9 +19,13 @@ use Vivutio\Bundle\IdentityBundle\Test\AuthorityTestCase;
 use Vivutio\Bundle\IdentityBundle\Test\Probe;
 use Vivutio\Property\Controller\PropertyController;
 use Vivutio\Property\Controller\RoomController;
+use Vivutio\Property\Controller\SeasonController;
 use Vivutio\Property\Entity\Property;
 use Vivutio\Property\Entity\RoomType;
+use Vivutio\Property\Entity\Season;
+use Vivutio\Property\Entity\SeasonPeriod;
 use Vivutio\Property\Enum\PropertyTypeEnum;
+use Vivutio\Property\Enum\SeasonKindEnum;
 use Vivutio\Property\Tests\Application\Kernel;
 
 /**
@@ -37,6 +41,10 @@ final class PropertyAuthorityTest extends AuthorityTestCase
     private const string PROPERTY = '/properties/'.self::PROPERTY_UUID;
     private const string ROOM_UUID = '0199a6f0-9e01-7e10-8000-000000009e02';
     private const string ROOM = self::PROPERTY.'/rooms/'.self::ROOM_UUID;
+    private const string SEASON_UUID = '0199a6f0-9e01-7e10-8000-000000009e03';
+    private const string SEASON = self::PROPERTY.'/seasons/'.self::SEASON_UUID;
+    private const string PERIOD_UUID = '0199a6f0-9e01-7e10-8000-000000009e04';
+    private const string EMPTY_SEASON = self::PROPERTY.'/seasons/0199a6f0-9e01-7e10-8000-000000009e05';
 
     protected static function getKernelClass(): string
     {
@@ -55,6 +63,14 @@ final class PropertyAuthorityTest extends AuthorityTestCase
             new Probe(RoomController::ADD, 'POST', self::PROPERTY.'/rooms', ['name' => 'Added by a probe', 'sleeps' => '2', 'adults' => '2', 'count' => '4'], formAt: self::PROPERTY.'/rooms'),
             new Probe(RoomController::CONFIGURE, 'GET', self::ROOM.'/configure'),
             new Probe(RoomController::CONFIGURE, 'POST', self::ROOM.'/configure', ['name' => 'Probed tent', 'count' => '12'], formAt: self::ROOM.'/configure'),
+            new Probe(SeasonController::SEASONS, 'GET', self::PROPERTY.'/seasons?year=2026'),
+            new Probe(SeasonController::ADD, 'POST', self::PROPERTY.'/seasons', ['name' => 'Added by a probe', 'kind' => 'low'], formAt: self::PROPERTY.'/seasons'),
+            new Probe(SeasonController::REPEAT, 'POST', self::PROPERTY.'/seasons/repeat', ['year' => '2026'], formAt: self::PROPERTY.'/seasons?year=2026'),
+            new Probe(SeasonController::CONFIGURE, 'GET', self::SEASON.'/configure'),
+            new Probe(SeasonController::CONFIGURE, 'POST', self::SEASON.'/configure', ['name' => 'Probed season', 'kind' => 'peak'], formAt: self::SEASON.'/configure'),
+            new Probe(SeasonController::ADD_PERIOD, 'POST', self::SEASON.'/periods', ['starts' => '2028-06-01', 'ends' => '2028-10-31'], formAt: self::SEASON.'/configure'),
+            new Probe(SeasonController::REMOVE_PERIOD, 'POST', self::SEASON.'/periods/'.self::PERIOD_UUID.'/remove', formAt: self::SEASON.'/configure'),
+            new Probe(SeasonController::REMOVE, 'POST', self::EMPTY_SEASON.'/remove', formAt: self::EMPTY_SEASON.'/configure'),
         ];
     }
 
@@ -85,5 +101,10 @@ final class PropertyAuthorityTest extends AuthorityTestCase
             ->setAdults(2)
             ->setCount(10)
             ->setUuid(Uuid::fromString(self::ROOM_UUID)));
+
+        $season = (new Season($camp))->setName('Probed season')->setKind(SeasonKindEnum::High)->setUuid(Uuid::fromString(self::SEASON_UUID));
+        $entityManager->persist($season);
+        $entityManager->persist((new Season($camp))->setName('Probed empty season')->setKind(SeasonKindEnum::Low)->setUuid(Uuid::fromString('0199a6f0-9e01-7e10-8000-000000009e05')));
+        $entityManager->persist((new SeasonPeriod($season, new \DateTimeImmutable('2026-06-01'), new \DateTimeImmutable('2026-10-31')))->setUuid(Uuid::fromString(self::PERIOD_UUID)));
     }
 }

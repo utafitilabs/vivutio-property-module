@@ -1,0 +1,56 @@
+{# Configuring a season: its name and kind, and the periods it runs. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+
+{% block title %}Configure {{ season.name }} · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+<header class="page-head">
+    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / <a href="{{ path('property_seasons', {uuid: property.uuid}) }}">{{ property.name }}</a> / {{ season.name }}</nav><div class="title"><h1>{{ season.name }}</h1><span class="about">{{ season.kind.label }} season</span></div></div>
+    <div class="actions"><a class="button outline" href="{{ path('property_seasons', {uuid: property.uuid}) }}">{{ icons.icon('left', 15) }} Back to the seasons</a></div>
+</header>
+
+{% if said %}<div class="notice" role="status">{{ icons.icon('check') }}<span>{{ said }}</span></div>{% endif %}
+{% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Try again.</span></div>{% endif %}
+{% if wrong.season is defined %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ wrong.season }}</span></div>{% endif %}
+
+<div class="stack">
+    <form class="panel" method="post" action="{{ path('property_season_configure', {uuid: property.uuid, season: season.uuid}) }}" novalidate>
+        <header class="panel-head"><h2>Season</h2><p>Its name, and how busy it is</p></header>
+        <input type="hidden" name="_token" value="{{ csrf_token('property_season_configure') }}">
+        {% include '@VivutioProperty/properties/_season_fields.html.twig' %}
+        <footer class="panel-foot"><span class="state">No changes</span><button type="reset" class="button quiet">Discard</button><button type="submit" class="button main">Save season</button></footer>
+    </form>
+
+    <section class="panel">
+        <header class="panel-head"><h2>When it runs</h2><p>From its first night to its last, both in it; no night is in two seasons</p></header>
+        {% for period in season.periods %}
+            <div class="fact" data-period="{{ period.starts|date('Y-m-d') }}"><span>{{ properties_.span(period) }}</span>
+                <form method="post" action="{{ path('property_season_period_remove', {uuid: property.uuid, season: season.uuid, period: period.uuid}) }}"><input type="hidden" name="_token" value="{{ csrf_token('property_season_period_remove') }}"><button type="submit" class="button quiet">Remove</button></form>
+            </div>
+        {% else %}
+            <p class="hint">It runs no period yet, so no night is in it.</p>
+        {% endfor %}
+    </section>
+
+    <form class="panel" method="post" action="{{ path('property_season_period_add', {uuid: property.uuid, season: season.uuid}) }}" novalidate>
+        <header class="panel-head"><h2>Add a period</h2><p>A year at most; add another for the next</p></header>
+        <input type="hidden" name="_token" value="{{ csrf_token('property_season_period_add') }}">
+        <div class="grid-2">
+            <div class="field{{ wrong.starts is defined ? ' wrong' }}"><label for="period-starts">First night</label><input class="input" id="period-starts" name="starts" type="date" value="{{ typed.starts }}" required>{{ properties_.hint('starts', wrong, null) }}</div>
+            <div class="field{{ wrong.ends is defined ? ' wrong' }}"><label for="period-ends">Last night</label><input class="input" id="period-ends" name="ends" type="date" value="{{ typed.ends }}" required>{{ properties_.hint('ends', wrong, null) }}</div>
+        </div>
+        <footer class="panel-foot"><span class="state"></span><button type="submit" class="button main">Add the period</button></footer>
+    </form>
+
+    {% if season.periods is empty %}
+    <form class="panel" method="post" action="{{ path('property_season_remove', {uuid: property.uuid, season: season.uuid}) }}">
+        <header class="panel-head"><h2>Remove the season</h2><p>It runs no period, so nothing is priced by it</p></header>
+        <input type="hidden" name="_token" value="{{ csrf_token('property_season_remove') }}">
+        <footer class="panel-foot"><span class="state"></span><button type="submit" class="button danger">Remove the season</button></footer>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

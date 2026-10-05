@@ -41,14 +41,17 @@ and the pages are gone. The migration builds its one table.
   them may be adults, how many the property has, and what is in them. A room
   type is withdrawn from sale rather than deleted; a property opens only with
   one on sale, and its size is what it has on sale.
+- **Seasons**, on a property's Seasons tab: each named and of a kind (low,
+  shoulder, high, peak), with the dated periods it runs, drawn as a year of
+  months. No night is in two seasons; nights in none are counted and shown, as
+  they have no rate. A year's periods are repeated a year later in one step.
 - **A place to post people**: through the core's place contract, every
   property but an archived one is offered on a person's Position card beside
   the offices, and departments may sit at it.
 - **The `property` scope**, one or more named properties, which a grant may be
   limited to.
 
-Seasons, rates and the availability calendar arrive next, each in its own
-release.
+Rates and the availability calendar arrive next, each in its own release.
 
 ## Who may do what
 
