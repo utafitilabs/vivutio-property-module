@@ -118,11 +118,9 @@ final class ThePropertiesTest extends WebTestCase
         $this->signedInAs($this->person('Baraka', TierEnum::Admin));
         $lodge = $this->add('Vivutio Lakeshore Lodge');
 
-        $page = $this->browser->request('GET', '/properties/'.$lodge->getUuid().'/configure');
-        $this->browser->submit($page->selectButton('Save property')->form(self::DETAILS));
+        $this->configure($lodge, self::DETAILS);
 
-        self::assertResponseRedirects('/properties/'.$lodge->getUuid());
-        $record = $this->browser->followRedirect();
+        $record = $this->browser->request('GET', '/properties/'.$lodge->getUuid());
         self::assertSame('Vivutio Lakeshore Lodge', trim($record->filter('h1')->text()));
         self::assertSame('Tented lodge', trim($record->filter('[data-type]')->text()));
         self::assertSame('Lake Manyara, Tanzania', trim($record->filter('[data-where]')->text()));
@@ -141,6 +139,8 @@ final class ThePropertiesTest extends WebTestCase
         $this->signedInAs($this->person('Baraka', TierEnum::Admin));
         $lodge = $this->add('Vivutio Lakeshore Lodge');
 
+        $this->configure($lodge, self::DETAILS);
+
         foreach ([
             ['grading', ['grading' => '6']],
             ['latitude', ['latitude' => '95']],
@@ -151,11 +151,11 @@ final class ThePropertiesTest extends WebTestCase
             ['children_up_to', ['infants_up_to' => '15', 'children_up_to' => '10']],
             ['infants_up_to', ['infants_up_to' => '', 'children_up_to' => '12']],
         ] as [$field, $changed]) {
-            $page = $this->browser->request('GET', '/properties/'.$lodge->getUuid().'/configure');
-            $page = $this->browser->submit($this->loose($page->selectButton('Save property')->form(), [...self::DETAILS, ...$changed]));
+            $page = $this->configure($lodge, $changed, strict: false);
 
             self::assertResponseStatusCodeSame(422);
             self::assertSame($field, $page->filter('.field.wrong')->filter('input, select, textarea')->attr('name'), $field);
+            self::assertSame(self::DETAILS['summary'], $this->property('Vivutio Lakeshore Lodge')->getSummary(), 'nothing was saved');
         }
     }
 
@@ -170,15 +170,13 @@ final class ThePropertiesTest extends WebTestCase
         $camp = $this->add('Vivutio Riverside Camp');
 
         foreach ([['open', 'Open'], ['closed', 'Closed'], ['open', 'Open'], ['archived', 'Archived'], ['closed', 'Closed']] as [$status, $label]) {
-            $page = $this->browser->request('GET', '/properties/'.$camp->getUuid().'/configure');
-            $this->browser->submit($page->selectButton('Save property')->form([...self::DETAILS, 'name' => 'Vivutio Riverside Camp', 'status' => $status]));
-            self::assertResponseRedirects('/properties/'.$camp->getUuid());
-            self::assertSame($label, trim($this->browser->followRedirect()->filter('[data-status]')->text()));
+            $this->configure($camp, ['status' => $status]);
+            self::assertSame($label, trim($this->browser->request('GET', '/properties/'.$camp->getUuid())->filter('[data-status]')->text()));
         }
 
         $page = $this->browser->request('GET', '/properties/'.$camp->getUuid().'/configure');
         self::assertSame(['closed', 'open', 'archived'], $page->filter('select[name="status"] option')->each(static fn (Crawler $option): string => (string) $option->attr('value')), 'a property never goes back to being a draft');
-        $page = $this->browser->submit($this->loose($page->selectButton('Save property')->form(), [...self::DETAILS, 'name' => 'Vivutio Riverside Camp', 'status' => 'draft']));
+        $page = $this->configure($camp, ['status' => 'draft'], strict: false);
         self::assertResponseStatusCodeSame(422);
         self::assertSame('status', $page->filter('.field.wrong select')->attr('name'));
     }
@@ -214,8 +212,7 @@ final class ThePropertiesTest extends WebTestCase
         self::assertInstanceOf(UserService::class, $accounts);
         $accounts->changePosting($amani, $camp);
 
-        $page = $this->browser->request('GET', '/properties/'.$camp->getUuid().'/configure');
-        $page = $this->browser->submit($page->selectButton('Save property')->form([...self::DETAILS, 'name' => 'Vivutio Riverside Camp', 'status' => 'archived']));
+        $page = $this->configure($camp, ['status' => 'archived'], strict: false);
 
         self::assertResponseStatusCodeSame(422);
         self::assertStringContainsString('1 person is posted here', $page->filter('.field.wrong')->text());
@@ -304,9 +301,41 @@ final class ThePropertiesTest extends WebTestCase
 
     private function changeStatus(Property $property, string $status): void
     {
-        $page = $this->browser->request('GET', '/properties/'.$property->getUuid().'/configure');
-        $this->browser->submit($page->selectButton('Save property')->form([...self::DETAILS, 'name' => $property->getName(), 'status' => $status]));
-        self::assertResponseRedirects('/properties/'.$property->getUuid());
+        $this->configure($property, ['status' => $status]);
+    }
+
+    /**
+     * Fills the configure page as an Admin would: each card that holds one
+     * of the values is saved with its own button, in the page's order. A
+     * strict save must come back to the page; a loose one, past what the
+     * choices offer, stops at the first refusal and returns it.
+     *
+     * @param array<string, string> $values
+     */
+    private function configure(Property $property, array $values, bool $strict = true): Crawler
+    {
+        $url = '/properties/'.$property->getUuid().'/configure';
+        $page = $this->browser->request('GET', $url);
+        $forms = $page->filter('form[data-card]');
+        self::assertGreaterThan(0, $forms->count());
+
+        foreach ($forms as $element) {
+            $card = new Crawler($element, $page->getUri());
+            $form = $card->filter('button[type="submit"]')->form();
+            $mine = array_intersect_key($values, $form->getValues());
+            if ([] === $mine) {
+                continue;
+            }
+
+            $page = $this->browser->submit($strict ? $form->setValues($mine) : $this->loose($form, $mine));
+            if (!$strict && 422 === $this->browser->getResponse()->getStatusCode()) {
+                return $page;
+            }
+            self::assertResponseRedirects($url);
+            $page = $this->browser->followRedirect();
+        }
+
+        return $page;
     }
 
     private function property(string $name): Property

@@ -16,7 +16,6 @@
     <div class="actions"><a class="button outline" href="{{ path('property_list') }}">{{ icons.icon('left', 15) }} Back to properties</a>{% if door('properties.configure') %}<a class="button outline" href="{{ path('property_configure', {uuid: property.uuid}) }}">Configure</a>{% endif %}</div>
 </header>
 
-{% if saved %}<div class="notice" role="status">{{ icons.icon('check') }}<span>The property is saved.</span></div>{% endif %}
 {% if property.status.value == 'draft' %}<div class="notice warn" role="status">{{ icons.icon('alert') }}<span>{{ property.name }} is a draft: nobody can book it until it is opened.</span></div>{% endif %}
 
 <div class="band">

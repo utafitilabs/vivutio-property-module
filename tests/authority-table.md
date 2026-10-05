@@ -71,5 +71,5 @@ Checks: `properties.configure`
 | Staff, no position | refused |
 | Staff holding the pair | refused |
 | Staff holding all but the pair | refused |
-| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01 |
-| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01 |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/configure |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/configure |

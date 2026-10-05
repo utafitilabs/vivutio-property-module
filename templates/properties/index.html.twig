@@ -1,5 +1,5 @@
-{# The properties, in the core's register idiom: a name over its kind, one
-   fact a column, an Open door. Added by the tiers, as a draft. #}
+{# The properties, in the core's register idiom: a name over its kind and
+   where it is, one fact a column, an Open door. Added by the tiers, as a draft. #}
 {% extends '@Shell/page.html.twig' %}
 {% import '@Shell/_icons.html.twig' as icons %}
 {% import '@Identity/positions/_macros.html.twig' as positions %}
@@ -30,19 +30,18 @@
 
     <section class="panel list">
         <table class="table">
-            <thead><tr><th>Property</th><th>Where</th><th style="width:130px">Status</th><th style="width:140px">People</th><th style="width:90px"></th></tr></thead>
+            <thead><tr><th>Property</th><th style="width:130px">Status</th><th style="width:140px">People</th><th style="width:90px"></th></tr></thead>
             <tbody>
             {% for property in properties %}
                 {%- set count = posted[property.placeId] ?? 0 -%}
                 <tr data-property="{{ property.name }}">
-                    <td><div class="who"><span class="initials">{{ positions.initials(property.name) }}</span><div><b>{{ property.name }}</b><small data-type>{{ property.type.label }}</small></div></div></td>
-                    <td data-where>{{ property.location }}</td>
+                    <td><div class="who"><span class="initials">{{ positions.initials(property.name) }}</span><div><b>{{ property.name }}</b><small><span data-type>{{ property.type.label }}</span> &middot; <span data-where>{{ property.location }}</span></small></div></div></td>
                     <td data-status>{{ properties_.status_chip(property.status) }}</td>
                     <td data-posted>{{ count == 0 ? 'Nobody posted' : count ~ ' posted' }}</td>
                     <td><a class="button outline" href="{{ path('property_show', {uuid: property.uuid}) }}">Open</a></td>
                 </tr>
             {% else %}
-                <tr><td colspan="5"><div class="empty"><b>No properties yet</b><span>A property is a camp, a lodge or a hotel the organization runs: add the first.</span></div></td></tr>
+                <tr><td colspan="4"><div class="empty"><b>No properties yet</b><span>A property is a camp, a lodge or a hotel the organization runs: add the first.</span></div></td></tr>
             {% endfor %}
             </tbody>
         </table>

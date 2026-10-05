@@ -51,6 +51,15 @@ final readonly class PropertyController
 
     private const string SAVED = 'property.saved';
 
+    /** The configure page's cards, each saved on its own, and what its notice calls it. */
+    private const array CARDS = [
+        'property' => 'The property',
+        'where' => 'Where it is',
+        'about' => 'About',
+        'house_rules' => 'The house rules',
+        'contact' => 'The contact',
+    ];
+
     public function __construct(
         private Environment $twig,
         private PropertyService $service,
@@ -91,18 +100,13 @@ final readonly class PropertyController
     #[Route('/properties/{uuid}', name: self::SHOW, requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
     #[IsGranted(self::READ)]
     public function show(
-        Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
         Property $property,
     ): Response {
-        $session = $request->getSession();
-        $saved = $session instanceof FlashBagAwareSessionInterface && [] !== $session->getFlashBag()->get(self::SAVED);
-
         return new Response($this->twig->render('@VivutioProperty/properties/show.html.twig', [
             'property' => $property,
             'posted' => $this->directory->postedAt($property),
             'departments' => $this->directory->departmentsAt($property),
-            'saved' => $saved,
         ]));
     }
 
@@ -114,10 +118,13 @@ final readonly class PropertyController
         Property $property,
     ): Response {
         if (!$request->isMethod('POST')) {
-            return $this->configurePage($property, $this->stored($property));
+            $session = $request->getSession();
+            $saved = $session instanceof FlashBagAwareSessionInterface ? $session->getFlashBag()->get(self::SAVED) : [];
+
+            return $this->configurePage($property, $this->stored($property), saved: \is_string($saved[0] ?? null) ? $saved[0] : null);
         }
 
-        $details = $this->typed($request);
+        $details = $this->typed($request, $this->stored($property));
         if (!$this->tokens->isTokenValid(new CsrfToken('property_configure', $request->getPayload()->getString('_token')))) {
             return $this->configurePage($property, $details, expired: true);
         }
@@ -128,35 +135,41 @@ final readonly class PropertyController
             return $this->configurePage($property, $details, wrong: [$refusal->field => $refusal->getMessage()]);
         }
 
+        $card = $request->getPayload()->getString('card');
         $session = $request->getSession();
         if ($session instanceof FlashBagAwareSessionInterface) {
-            $session->getFlashBag()->add(self::SAVED, true);
+            $session->getFlashBag()->add(self::SAVED, \array_key_exists($card, self::CARDS) ? self::CARDS[$card] : 'The property');
         }
 
-        return new RedirectResponse($this->urls->generate(self::SHOW, ['uuid' => $property->getUuid()]));
+        return new RedirectResponse($this->urls->generate(self::CONFIGURE, ['uuid' => $property->getUuid()]));
     }
 
-    private function typed(Request $request): PropertyDetails
+    /**
+     * What a card sent, over what is stored: a card sends its own fields, and
+     * the rest of the property stands as it is.
+     */
+    private function typed(Request $request, PropertyDetails $stored): PropertyDetails
     {
         $payload = $request->getPayload();
+        $field = static fn (string $name, string $kept): string => $payload->has($name) ? $payload->getString($name) : $kept;
 
         return new PropertyDetails(
-            name: $payload->getString('name'),
-            type: $payload->getString('type'),
-            location: $payload->getString('location'),
-            status: $payload->getString('status'),
-            latitude: $payload->getString('latitude'),
-            longitude: $payload->getString('longitude'),
-            grading: $payload->getString('grading'),
-            summary: $payload->getString('summary'),
-            description: $payload->getString('description'),
-            email: $payload->getString('email'),
-            phone: $payload->getString('phone'),
-            website: $payload->getString('website'),
-            checkIn: $payload->getString('check_in'),
-            checkOut: $payload->getString('check_out'),
-            infantsUpTo: $payload->getString('infants_up_to'),
-            childrenUpTo: $payload->getString('children_up_to'),
+            name: $field('name', $stored->name),
+            type: $field('type', $stored->type),
+            location: $field('location', $stored->location),
+            status: $field('status', $stored->status),
+            latitude: $field('latitude', $stored->latitude),
+            longitude: $field('longitude', $stored->longitude),
+            grading: $field('grading', $stored->grading),
+            summary: $field('summary', $stored->summary),
+            description: $field('description', $stored->description),
+            email: $field('email', $stored->email),
+            phone: $field('phone', $stored->phone),
+            website: $field('website', $stored->website),
+            checkIn: $field('check_in', $stored->checkIn),
+            checkOut: $field('check_out', $stored->checkOut),
+            infantsUpTo: $field('infants_up_to', $stored->infantsUpTo),
+            childrenUpTo: $field('children_up_to', $stored->childrenUpTo),
         );
     }
 
@@ -201,13 +214,14 @@ final readonly class PropertyController
     /**
      * @param array<string, string> $wrong
      */
-    private function configurePage(Property $property, PropertyDetails $details, array $wrong = [], bool $expired = false): Response
+    private function configurePage(Property $property, PropertyDetails $details, array $wrong = [], bool $expired = false, ?string $saved = null): Response
     {
         return new Response($this->twig->render('@VivutioProperty/properties/configure.html.twig', [
             'property' => $property,
             'types' => PropertyTypeEnum::cases(),
             'statuses' => $property->getStatus()->choices(),
             'typed' => $details->typed(),
+            'saved' => $saved,
             'wrong' => $wrong,
             'expired' => $expired,
         ]), [] === $wrong && !$expired ? Response::HTTP_OK : Response::HTTP_UNPROCESSABLE_ENTITY);
