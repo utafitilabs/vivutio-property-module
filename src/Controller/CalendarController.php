@@ -55,7 +55,7 @@ final readonly class CalendarController
     }
 
     #[Route('/properties/{uuid}/calendar', name: self::CALENDAR, requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
-    #[IsGranted(PropertyController::READ)]
+    #[IsGranted(PropertyController::READ, subject: 'property')]
     public function calendar(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -65,7 +65,7 @@ final readonly class CalendarController
     }
 
     #[Route('/properties/{uuid}/calendar/{night}', name: self::NIGHT, requirements: ['uuid' => Requirement::UUID, 'night' => '\d{4}-\d{2}-\d{2}'], methods: ['GET'])]
-    #[IsGranted(PropertyController::READ)]
+    #[IsGranted(PropertyController::READ, subject: 'property')]
     public function night(
         string $night,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -84,7 +84,7 @@ final readonly class CalendarController
     }
 
     #[Route('/properties/{uuid}/closures', name: self::CLOSE, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function close(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -110,7 +110,7 @@ final readonly class CalendarController
     }
 
     #[Route('/properties/{uuid}/closures/{closure}/remove', name: self::REMOVE, requirements: ['uuid' => Requirement::UUID, 'closure' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function remove(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]

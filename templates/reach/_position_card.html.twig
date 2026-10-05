@@ -1,0 +1,16 @@
+{# "Permissions apply at" on the Position card, design C: one choice of three,
+   and the properties to choose from for "Chosen properties". #}
+<div class="field{{ wrong.reach is defined ? ' wrong' }}" data-reach><span class="label">Permissions apply at</span>
+    <div><div class="switch" role="group" aria-label="Permissions apply at" data-name="reach">
+        {%- for option in reaches -%}
+            <button type="button" data-value="{{ option.value }}" aria-pressed="{{ option == reach ? 'true' : 'false' }}"{% if option.value == 'posted' and not posted_at_property %} disabled title="Only for somebody posted at a property"{% endif %}>{{ option.label }}</button>
+        {%- endfor -%}
+    </div></div>
+    <input type="hidden" name="reach" value="{{ reach.value }}">
+    <div class="hint"><span>{{ wrong.reach ?? 'Where their position\'s permissions hold; where posted moves with them' }}</span></div>
+</div>
+<div class="ticks" data-shown-for="reach=chosen"{% if reach.value != 'chosen' %} hidden{% endif %}>
+    {%- for property in offered -%}
+        <label class="tick"><input type="checkbox" name="reach_properties[]" value="{{ property.placeId }}"{{ property.placeId in chosen ? ' checked' }}><span>{{ property.name }}</span><em>{{ property.type.label }}</em></label>
+    {%- endfor -%}
+</div>

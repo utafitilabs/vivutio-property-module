@@ -67,7 +67,7 @@ final readonly class SeasonController
     }
 
     #[Route('/properties/{uuid}/seasons', name: self::SEASONS, requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
-    #[IsGranted(PropertyController::READ)]
+    #[IsGranted(PropertyController::READ, subject: 'property')]
     public function seasons(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -77,7 +77,7 @@ final readonly class SeasonController
     }
 
     #[Route('/properties/{uuid}/seasons', name: self::ADD, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function add(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -99,7 +99,7 @@ final readonly class SeasonController
     }
 
     #[Route('/properties/{uuid}/seasons/repeat', name: self::REPEAT, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function repeat(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -116,7 +116,7 @@ final readonly class SeasonController
     }
 
     #[Route('/properties/{uuid}/seasons/{season}/configure', name: self::CONFIGURE, requirements: ['uuid' => Requirement::UUID, 'season' => Requirement::UUID], methods: ['GET', 'POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function configure(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -146,7 +146,7 @@ final readonly class SeasonController
     }
 
     #[Route('/properties/{uuid}/seasons/{season}/periods', name: self::ADD_PERIOD, requirements: ['uuid' => Requirement::UUID, 'season' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function addPeriod(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -172,7 +172,7 @@ final readonly class SeasonController
     }
 
     #[Route('/properties/{uuid}/seasons/{season}/periods/{period}/remove', name: self::REMOVE_PERIOD, requirements: ['uuid' => Requirement::UUID, 'season' => Requirement::UUID, 'period' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function removePeriod(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -201,7 +201,7 @@ final readonly class SeasonController
     }
 
     #[Route('/properties/{uuid}/seasons/{season}/remove', name: self::REMOVE, requirements: ['uuid' => Requirement::UUID, 'season' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function remove(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]

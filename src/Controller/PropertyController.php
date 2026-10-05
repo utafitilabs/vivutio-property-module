@@ -26,11 +26,12 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Twig\Environment;
 use Vivutio\Property\Entity\Property;
+use Vivutio\Property\Enum\PropertyStatusEnum;
 use Vivutio\Property\Enum\PropertyTypeEnum;
 use Vivutio\Property\Exception\InvalidPropertyException;
 use Vivutio\Property\Model\PropertyDetails;
-use Vivutio\Property\Repository\PropertyRepository;
 use Vivutio\Property\Service\PropertyDirectoryService;
+use Vivutio\Property\Service\PropertyGlanceService;
 use Vivutio\Property\Service\PropertyService;
 
 /**
@@ -64,7 +65,7 @@ final readonly class PropertyController
         private Environment $twig,
         private PropertyService $service,
         private PropertyDirectoryService $directory,
-        private PropertyRepository $properties,
+        private PropertyGlanceService $glance,
         private CsrfTokenManagerInterface $tokens,
         private UrlGeneratorInterface $urls,
     ) {
@@ -72,9 +73,9 @@ final readonly class PropertyController
 
     #[Route('/properties', name: self::REGISTER, methods: ['GET'])]
     #[IsGranted(self::READ)]
-    public function register(): Response
+    public function register(Request $request): Response
     {
-        return $this->registerPage();
+        return $this->registerPage(q: $request->query->getString('q'), status: $request->query->getString('status'), type: $request->query->getString('type'));
     }
 
     #[Route('/properties', name: self::ADD, methods: ['POST'])]
@@ -98,7 +99,7 @@ final readonly class PropertyController
     }
 
     #[Route('/properties/{uuid}', name: self::SHOW, requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
-    #[IsGranted(self::READ)]
+    #[IsGranted(self::READ, subject: 'property')]
     public function show(
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
         Property $property,
@@ -108,11 +109,12 @@ final readonly class PropertyController
             'posted' => $this->directory->postedAt($property),
             'departments' => $this->directory->departmentsAt($property),
             'band' => $this->directory->band($property),
+            'glance' => $this->glance->of($property),
         ]));
     }
 
     #[Route('/properties/{uuid}/configure', name: self::CONFIGURE, requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
-    #[IsGranted(self::CHANGE)]
+    #[IsGranted(self::CHANGE, subject: 'property')]
     public function configure(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -200,10 +202,14 @@ final readonly class PropertyController
      * @param array<string, string> $typed
      * @param array<string, string> $wrong
      */
-    private function registerPage(array $typed = [], array $wrong = [], bool $expired = false): Response
+    private function registerPage(array $typed = [], array $wrong = [], bool $expired = false, string $q = '', string $status = '', string $type = ''): Response
     {
+        $register = $this->directory->register($q, $status, $type);
+
         return new Response($this->twig->render('@VivutioProperty/properties/index.html.twig', [
-            'properties' => $this->properties->findBy([], ['name' => 'ASC']),
+            'register' => $register,
+            'properties' => $register->properties,
+            'statuses' => PropertyStatusEnum::cases(),
             'posted' => $this->directory->postedCounts(),
             'units' => $this->directory->unitCounts(),
             'types' => PropertyTypeEnum::cases(),

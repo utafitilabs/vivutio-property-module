@@ -17,7 +17,9 @@ use Vivutio\Bundle\IdentityBundle\Repository\DepartmentRepository;
 use Vivutio\Bundle\IdentityBundle\Repository\UserRepository;
 use Vivutio\Contracts\Access\ConcernSourceInterface;
 use Vivutio\Contracts\Access\ScopeSourceInterface;
+use Vivutio\Contracts\Identity\PositionCardFieldInterface;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
+use Vivutio\Contracts\Place\ReachSourceInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Property\Access\PropertyConcerns;
 use Vivutio\Property\Access\PropertyScopes;
@@ -27,8 +29,11 @@ use Vivutio\Property\Controller\PropertyController;
 use Vivutio\Property\Controller\RateController;
 use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
+use Vivutio\Property\Identity\PropertyPositionCard;
 use Vivutio\Property\Place\PropertyPlaces;
+use Vivutio\Property\Place\PropertyReachSource;
 use Vivutio\Property\Repository\ClosureRepository;
+use Vivutio\Property\Repository\PropertyReachRepository;
 use Vivutio\Property\Repository\PropertyRepository;
 use Vivutio\Property\Repository\RateRepository;
 use Vivutio\Property\Repository\RateTermsRepository;
@@ -38,6 +43,7 @@ use Vivutio\Property\Repository\SeasonRepository;
 use Vivutio\Property\Service\AvailabilityService;
 use Vivutio\Property\Service\CancellationService;
 use Vivutio\Property\Service\PropertyDirectoryService;
+use Vivutio\Property\Service\PropertyGlanceService;
 use Vivutio\Property\Service\PropertyService;
 use Vivutio\Property\Service\RateQuoteService;
 use Vivutio\Property\Service\RateService;
@@ -204,19 +210,46 @@ return static function (ContainerConfigurator $container): void {
     $services->alias(CalendarController::class, 'property.controller.calendar')->public();
 
     $services->set('property.directory', PropertyDirectoryService::class)
-        ->args([service(UserRepository::class), service(DepartmentRepository::class), service(RoomTypeRepository::class)]);
+        ->args([service(UserRepository::class), service(DepartmentRepository::class), service(RoomTypeRepository::class), service(PropertyRepository::class), service('security.authorization_checker')]);
+
+    // Where a person's permissions apply among the properties: asked by the
+    // core's grant voter, and chosen on the Position card.
+    $services->set(PropertyReachRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+    $services->set('property.reach', PropertyReachSource::class)
+        ->args([service(PropertyReachRepository::class), service(UserRepository::class)])
+        ->tag(ReachSourceInterface::TAG);
+    $services->set('property.position_card', PropertyPositionCard::class)
+        ->args([
+            service('doctrine.orm.entity_manager'),
+            service(PropertyReachRepository::class),
+            service(UserRepository::class),
+            service('property.places'),
+        ])
+        ->tag(PositionCardFieldInterface::TAG);
 
     // The properties as places to post people at, beside the core's offices.
     $services->set('property.places', PropertyPlaces::class)
         ->args([service(PropertyRepository::class)])
         ->tag(PlaceSourceInterface::TAG);
 
+    // A property at a glance, as of the framework's clock.
+    $services->set('property.glance', PropertyGlanceService::class)
+        ->args([
+            service('clock'),
+            service(RateRepository::class),
+            service(SeasonPeriodRepository::class),
+            service(ClosureRepository::class),
+            service('property.cancellation'),
+        ]);
+
     $services->set('property.controller.properties', PropertyController::class)
         ->args([
             service('twig'),
             service('property.properties'),
             service('property.directory'),
-            service(PropertyRepository::class),
+            service('property.glance'),
             service('security.csrf.token_manager'),
             service('router'),
         ])

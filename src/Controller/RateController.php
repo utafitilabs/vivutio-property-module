@@ -77,7 +77,7 @@ final readonly class RateController
     }
 
     #[Route('/properties/{uuid}/rates', name: self::RATES, requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
-    #[IsGranted(PropertyController::READ)]
+    #[IsGranted(PropertyController::READ, subject: 'property')]
     public function rates(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -90,7 +90,7 @@ final readonly class RateController
     }
 
     #[Route('/properties/{uuid}/rates/setup', name: self::SETUP, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function setup(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -113,7 +113,7 @@ final readonly class RateController
     }
 
     #[Route('/properties/{uuid}/rates', name: self::SAVE, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function save(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -140,7 +140,7 @@ final readonly class RateController
     }
 
     #[Route('/properties/{uuid}/rates/terms', name: self::TERMS, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function terms(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -163,7 +163,7 @@ final readonly class RateController
     }
 
     #[Route('/properties/{uuid}/rates/carry', name: self::CARRY, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function carry(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]

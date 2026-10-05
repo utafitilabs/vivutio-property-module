@@ -13,11 +13,16 @@ declare(strict_types=1);
 
 namespace Vivutio\Property\Service;
 
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Vivutio\Bundle\IdentityBundle\Entity\Department;
 use Vivutio\Bundle\IdentityBundle\Entity\User;
 use Vivutio\Bundle\IdentityBundle\Repository\DepartmentRepository;
 use Vivutio\Bundle\IdentityBundle\Repository\UserRepository;
 use Vivutio\Property\Entity\Property;
+use Vivutio\Property\Enum\PropertyStatusEnum;
+use Vivutio\Property\Enum\PropertyTypeEnum;
+use Vivutio\Property\Model\PropertyRegister;
+use Vivutio\Property\Repository\PropertyRepository;
 use Vivutio\Property\Repository\RoomTypeRepository;
 
 /**
@@ -27,11 +32,42 @@ use Vivutio\Property\Repository\RoomTypeRepository;
  */
 final readonly class PropertyDirectoryService
 {
+    private const string READ = 'properties.read';
+
     public function __construct(
         private UserRepository $users,
         private DepartmentRepository $departments,
         private RoomTypeRepository $rooms,
+        private PropertyRepository $properties,
+        private AuthorizationCheckerInterface $authorization,
     ) {
+    }
+
+    /**
+     * The register filtered by a search over names and places, a status and a
+     * type; a filter that names nothing is ignored.
+     */
+    public function register(string $q, string $status, string $type): PropertyRegister
+    {
+        // Only what the person may open, by the same rule as the pages: the
+        // counts are over these too.
+        $all = array_values(array_filter($this->properties->findBy([], ['name' => 'ASC']), fn (Property $property): bool => $this->authorization->isGranted(self::READ, $property)));
+        $status = PropertyStatusEnum::tryFrom($status);
+        $type = PropertyTypeEnum::tryFrom($type);
+        $q = trim($q);
+
+        $statusCounts = array_fill_keys(array_map(static fn (PropertyStatusEnum $case): string => $case->value, PropertyStatusEnum::cases()), 0);
+        $typeCounts = [];
+        foreach ($all as $property) {
+            ++$statusCounts[$property->getStatus()->value];
+            $typeCounts[$property->getType()->value] = ($typeCounts[$property->getType()->value] ?? 0) + 1;
+        }
+
+        $matching = array_values(array_filter($all, static fn (Property $property): bool => (null === $status || $property->getStatus() === $status)
+            && (null === $type || $property->getType() === $type)
+            && ('' === $q || str_contains(mb_strtolower($property->getName().' '.$property->getLocation()), mb_strtolower($q)))));
+
+        return new PropertyRegister($matching, \count($all), $statusCounts, $typeCounts, array_filter(['q' => $q, 'status' => null === $status ? '' : $status->value, 'type' => null === $type ? '' : $type->value], static fn (string $value): bool => '' !== $value));
     }
 
     /**

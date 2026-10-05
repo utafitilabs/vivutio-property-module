@@ -20,6 +20,8 @@
         "php": ">=8.4",
         "doctrine/doctrine-bundle": "^3.0",
         "doctrine/orm": "^3.5",
+        "psr/clock": "^1.0",
+        "symfony/clock": "^8.0",
         "symfony/config": "^8.0",
         "symfony/dependency-injection": "^8.0",
         "symfony/framework-bundle": "^8.0",
@@ -31,7 +33,7 @@
         "symfony/security-http": "^8.0",
         "symfony/twig-bundle": "^8.0",
         "twig/twig": "^3.21",
-        "vivutio/vivutio": "^0.1.14"
+        "vivutio/vivutio": "^0.1.15"
     },
     "require-dev": {
         "doctrine/doctrine-migrations-bundle": "^4.0",
@@ -60,7 +62,11 @@
         "cs:check": "php-cs-fixer fix --dry-run --diff",
         "phpstan": "phpstan analyse --no-progress --memory-limit=1G",
         "test": "phpunit",
-        "check": ["@cs:check", "@phpstan", "@test"]
+        "check": [
+            "@cs:check",
+            "@phpstan",
+            "@test"
+        ]
     },
     "config": {
         "sort-packages": true

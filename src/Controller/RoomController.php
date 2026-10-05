@@ -55,7 +55,7 @@ final readonly class RoomController
     }
 
     #[Route('/properties/{uuid}/rooms', name: self::ROOMS, requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
-    #[IsGranted(PropertyController::READ)]
+    #[IsGranted(PropertyController::READ, subject: 'property')]
     public function rooms(
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
         Property $property,
@@ -64,7 +64,7 @@ final readonly class RoomController
     }
 
     #[Route('/properties/{uuid}/rooms', name: self::ADD, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function add(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]
@@ -85,7 +85,7 @@ final readonly class RoomController
     }
 
     #[Route('/properties/{uuid}/rooms/{room}/configure', name: self::CONFIGURE, requirements: ['uuid' => Requirement::UUID, 'room' => Requirement::UUID], methods: ['GET', 'POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function configure(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]

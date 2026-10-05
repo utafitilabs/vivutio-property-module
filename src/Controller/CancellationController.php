@@ -51,7 +51,7 @@ final readonly class CancellationController
     }
 
     #[Route('/properties/{uuid}/cancellation', name: self::CONFIGURE, requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
-    #[IsGranted(PropertyController::CHANGE)]
+    #[IsGranted(PropertyController::CHANGE, subject: 'property')]
     public function configure(
         Request $request,
         #[MapEntity(mapping: ['uuid' => 'uuid'])]

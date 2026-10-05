@@ -21,6 +21,14 @@
 
 <div class="columns">
     <div class="stack">
+        <section class="panel" data-glance>
+            <header class="panel-head"><h2>At a glance</h2><p>What its other tabs hold, as of today</p></header>
+            <div class="fact"><span><a href="{{ path('property_rates', {uuid: property.uuid}) }}">A night</a></span><b data-glance-from>{{ glance.from }}</b></div>
+            <div class="fact"><span><a href="{{ path('property_seasons', {uuid: property.uuid}) }}">Tonight</a></span><b data-glance-tonight>{{ glance.tonight }}</b></div>
+            <div class="fact"><span><a href="{{ path('property_seasons', {uuid: property.uuid}) }}">Next season</a></span><b data-glance-next>{{ glance.next }}</b></div>
+            <div class="fact"><span><a href="{{ path('property_calendar', {uuid: property.uuid}) }}">Closed</a></span><b data-glance-closure>{{ glance.closure }}</b></div>
+            <div class="fact"><span><a href="{{ path('property_rates', {uuid: property.uuid}) }}">Cancelling</a></span><b data-glance-cancellation>{{ glance.cancellation }}</b></div>
+        </section>
         <section class="panel">
             <header class="panel-head"><h2>About</h2><p>What operators and guests read first</p></header>
             <div class="fact"><span>Where it is</span><b data-where>{{ property.location }}</b></div>
