@@ -97,9 +97,9 @@
 
         <section class="panel" data-cancellation>
             <header class="panel-head"><h2>Cancellation</h2><p>Counted in days before arrival; each night by its own season</p></header>
-            <div class="fact" data-policy="property"><span>The property's</span><ul>{% for band in property_bands %}<li>{{ band }}</li>{% endfor %}</ul></div>
+            <div class="fact" data-policy="property"><span>The property's</span><b>{% for band in property_bands %}<span data-band>{{ band }}</span>{% if not loop.last %}<br>{% endif %}{% endfor %}</b></div>
             {% for policy in policies %}
-                <div class="fact" data-policy="{{ policy.season.name }}"><span>{{ policy.season.name }}{% if policy.follows %} &middot; The property's{% endif %}</span><ul>{% for band in policy.bands %}<li>{{ band }}</li>{% endfor %}</ul></div>
+                <div class="fact" data-policy="{{ policy.season.name }}"><span>{{ policy.season.name }}{% if policy.follows %} &middot; The property's{% endif %}</span><b>{% for band in policy.bands %}<span data-band>{{ band }}</span>{% if not loop.last %}<br>{% endif %}{% endfor %}</b></div>
             {% endfor %}
             {% if may %}<footer class="panel-foot"><span class="state"></span><a class="button outline" href="{{ path('property_cancellation', {uuid: property.uuid}) }}">Configure cancellation</a></footer>{% endif %}
         </section>

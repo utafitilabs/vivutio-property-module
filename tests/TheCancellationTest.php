@@ -78,9 +78,9 @@ final class TheCancellationTest extends WebTestCase
         $this->card('High Season', ['mode' => 'own', 'tiers[0][days]' => '30', 'tiers[0][percent]' => '100']);
 
         $tab = $this->browser->request('GET', $this->rates());
-        self::assertSame(['Free more than 60 days before arrival', '20% from 60 to 45 days before', '50% from 44 to 30 days before', '100% from 29 days before, and after arrival'], $tab->filter('[data-policy="property"] li')->each(static fn (Crawler $band): string => trim($band->text())));
-        self::assertSame(['No charge to cancel'], $tab->filter('[data-policy="Green Season"] li')->each(static fn (Crawler $band): string => trim($band->text())));
-        self::assertSame(['Free more than 30 days before arrival', '100% from 30 days before, and after arrival'], $tab->filter('[data-policy="High Season"] li')->each(static fn (Crawler $band): string => trim($band->text())));
+        self::assertSame(['Free more than 60 days before arrival', '20% from 60 to 45 days before', '50% from 44 to 30 days before', '100% from 29 days before, and after arrival'], $tab->filter('[data-policy="property"] [data-band]')->each(static fn (Crawler $band): string => trim($band->text())));
+        self::assertSame(['No charge to cancel'], $tab->filter('[data-policy="Green Season"] [data-band]')->each(static fn (Crawler $band): string => trim($band->text())));
+        self::assertSame(['Free more than 30 days before arrival', '100% from 30 days before, and after arrival'], $tab->filter('[data-policy="High Season"] [data-band]')->each(static fn (Crawler $band): string => trim($band->text())));
 
         $this->card('High Season', ['mode' => 'follow']);
         self::assertStringContainsString("The property's", $this->browser->request('GET', $this->rates())->filter('[data-policy="High Season"]')->text());
@@ -117,7 +117,7 @@ final class TheCancellationTest extends WebTestCase
         $this->signedInAs($this->person('Amani', TierEnum::Staff, ['properties.read'], $reception));
 
         $tab = $this->browser->request('GET', $this->rates());
-        self::assertCount(2, $tab->filter('[data-policy="property"] li'));
+        self::assertCount(2, $tab->filter('[data-policy="property"] [data-band]'));
         self::assertCount(0, $tab->selectLink('Configure cancellation'));
         $this->browser->request('GET', '/properties/'.$this->lodge->getUuid().'/cancellation');
         self::assertResponseStatusCodeSame(403);
