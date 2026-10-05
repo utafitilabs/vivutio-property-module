@@ -56,6 +56,7 @@ final readonly class RateController
     public const string SETUP = 'property_rates_setup';
     public const string SAVE = 'property_rates_save';
     public const string TERMS = 'property_rate_terms_save';
+    public const string CARRY = 'property_rates_carry';
 
     private const string SAID = 'property.rates.said';
 
@@ -161,6 +162,28 @@ final readonly class RateController
         return $this->back($request, $property, $year, 'The terms are saved.');
     }
 
+    #[Route('/properties/{uuid}/rates/carry', name: self::CARRY, requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
+    #[IsGranted(PropertyController::CHANGE)]
+    public function carry(
+        Request $request,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])]
+        Property $property,
+    ): Response {
+        $payload = $request->getPayload();
+        $year = $this->year($payload->getString('year'));
+        if (!$this->valid('property_rates_carry', $request)) {
+            return $this->page($property, $year, expired: true);
+        }
+
+        try {
+            $carried = $this->service->carry($property, $year, $payload->getString('raise'));
+        } catch (InvalidRateException $refusal) {
+            return $this->page($property, $year, wrong: [$refusal->field => $refusal->getMessage()], raise: $payload->getString('raise'));
+        }
+
+        return $this->back($request, $property, min($year + 1, 2100), $carried->says());
+    }
+
     /**
      * A two-level grid of typed cells, as a form sends it.
      *
@@ -222,7 +245,7 @@ final readonly class RateController
      * @param array<mixed>|null                                                   $quote
      * @param array<string, string>                                               $wrong
      */
-    private function page(Property $property, int $year, ?array $setup = null, ?array $typed = null, ?array $typedTerms = null, ?array $quote = null, array $wrong = [], bool $expired = false, ?BoardBasisEnum $board = null, ?string $said = null): Response
+    private function page(Property $property, int $year, ?array $setup = null, ?array $typed = null, ?array $typedTerms = null, ?array $quote = null, array $wrong = [], bool $expired = false, ?BoardBasisEnum $board = null, ?string $said = null, string $raise = ''): Response
     {
         $first = new \DateTimeImmutable($year.'-01-01');
         $last = new \DateTimeImmutable($year.'-12-31');
@@ -272,6 +295,7 @@ final readonly class RateController
             'property_bands' => $this->cancellation->bands($property->getCancellation()),
             'policies' => $policies,
             'refused' => $refused,
+            'raise' => $raise,
             'wrong' => $wrong,
             'expired' => $expired,
             'said' => $said,

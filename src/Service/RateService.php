@@ -22,6 +22,7 @@ use Vivutio\Property\Entity\SeasonPeriod;
 use Vivutio\Property\Enum\BoardBasisEnum;
 use Vivutio\Property\Enum\PricingEnum;
 use Vivutio\Property\Exception\InvalidRateException;
+use Vivutio\Property\Model\RatesCarried;
 use Vivutio\Property\Repository\RateRepository;
 use Vivutio\Property\Repository\RateTermsRepository;
 use Vivutio\Property\Repository\RoomTypeRepository;
@@ -176,6 +177,73 @@ final readonly class RateService
             $found->setShares($set);
         }
         $this->entityManager->flush();
+    }
+
+    /**
+     * Each rate and each period's terms of the periods that start in a year,
+     * onto its season's period a year later, raised by a share in per cent;
+     * whatever is set there already is left as it is.
+     *
+     * @throws InvalidRateException
+     */
+    public function carry(Property $property, int $year, string $raise): RatesCarried
+    {
+        $raise = trim($raise);
+        if ('' === $raise) {
+            $raise = '0';
+        }
+        if (!ctype_digit($raise) || (int) $raise > 100) {
+            throw new InvalidRateException('raise', 'A raise is a whole share, from 0 to 100 per cent.');
+        }
+        $by = (int) $raise;
+
+        $periods = $this->periods->findByProperty($property);
+        $starting = array_filter($periods, static fn (SeasonPeriod $period): bool => (int) $period->getStarts()->format('Y') === $year);
+
+        $unmatched = 0;
+        $copied = 0;
+        $left = 0;
+        foreach ($starting as $period) {
+            $next = null;
+            foreach ($periods as $candidate) {
+                if ($candidate->getSeason() === $period->getSeason() && $candidate->getStarts() == SeasonService::aYearOn($period->getStarts())) {
+                    $next = $candidate;
+                }
+            }
+            if (null === $next) {
+                ++$unmatched;
+                continue;
+            }
+
+            foreach ($this->rates->findBy(['period' => $period]) as $rate) {
+                if (null !== $this->rates->findOneBy(['roomType' => $rate->getRoomType(), 'period' => $next, 'board' => $rate->getBoard()])) {
+                    ++$left;
+                    continue;
+                }
+                $copy = (new Rate($rate->getRoomType(), $next, $rate->getBoard()))->setAmount(self::raised($rate->getAmount(), $by));
+                $this->entityManager->persist($copy);
+                $this->entityManager->flush();
+                ++$copied;
+            }
+
+            $terms = $this->terms->findOneBy(['period' => $period]);
+            if (null !== $terms && null === $this->terms->findOneBy(['period' => $next])) {
+                $this->entityManager->persist((new RateTerms($next))->setShares($terms->getShares()));
+                $this->entityManager->flush();
+            }
+        }
+
+        return new RatesCarried($year, $by, \count($starting), $unmatched, $copied, $left);
+    }
+
+    /** An amount raised by a share, to the cent, halves up: "290.00" by 5 is "304.50". */
+    private static function raised(string $amount, int $by): string
+    {
+        [$whole, $fraction] = array_pad(explode('.', $amount, 2), 2, '0');
+        $cents = (int) $whole * 100 + (int) str_pad(substr($fraction, 0, 2), 2, '0');
+        $raised = intdiv($cents * (100 + $by) + 50, 100);
+
+        return \sprintf('%d.%02d', intdiv($raised, 100), $raised % 100);
     }
 
     /**

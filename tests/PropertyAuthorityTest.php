@@ -85,6 +85,7 @@ final class PropertyAuthorityTest extends AuthorityTestCase
             new Probe(RateController::RATES, 'GET', self::PROPERTY.'/rates?year=2026'),
             new Probe(RateController::SETUP, 'POST', self::PROPERTY.'/rates/setup', ['currency' => 'USD', 'pricing' => 'per_person', 'boards' => ['full_board'], 'year' => '2026'], formAt: self::PROPERTY.'/rates?year=2026'),
             new Probe(RateController::SAVE, 'POST', self::PROPERTY.'/rates', ['year' => '2026', 'board' => 'full_board', 'amounts' => [self::ROOM_UUID => [self::PRICED_PERIOD_UUID => '310']]], formAt: self::PROPERTY.'/rates?year=2026'),
+            new Probe(RateController::CARRY, 'POST', self::PROPERTY.'/rates/carry', ['year' => '2026', 'raise' => '5'], formAt: self::PROPERTY.'/rates?year=2026'),
             new Probe(RateController::TERMS, 'POST', self::PROPERTY.'/rates/terms', ['year' => '2026', 'terms' => [self::PRICED_PERIOD_UUID => ['single' => '130']]], formAt: self::PROPERTY.'/rates?year=2026'),
             new Probe(SeasonController::REMOVE, 'POST', self::EMPTY_SEASON.'/remove', formAt: self::EMPTY_SEASON.'/configure'),
         ];

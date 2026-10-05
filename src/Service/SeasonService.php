@@ -169,7 +169,7 @@ final readonly class SeasonService
     }
 
     /** The same day a year later; the 29th of February becomes the 28th. */
-    private static function aYearOn(\DateTimeImmutable $day): \DateTimeImmutable
+    public static function aYearOn(\DateTimeImmutable $day): \DateTimeImmutable
     {
         $next = (int) $day->format('Y') + 1;
         $date = $day->setDate($next, (int) $day->format('n'), 1);
