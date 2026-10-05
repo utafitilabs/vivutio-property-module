@@ -1,0 +1,27 @@
+{# Configuring a room type: its fields, and whether it is on sale. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+
+{% block title %}Configure {{ room.name }} · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+<header class="page-head">
+    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / <a href="{{ path('property_rooms', {uuid: property.uuid}) }}">{{ property.name }}</a> / {{ room.name }}</nav><div class="title"><h1>{{ room.name }}</h1></div></div>
+    <div class="actions"><a class="button outline" href="{{ path('property_rooms', {uuid: property.uuid}) }}">{{ icons.icon('left', 15) }} Back to the rooms</a></div>
+</header>
+
+<form class="panel" method="post" action="{{ path('property_room_configure', {uuid: property.uuid, room: room.uuid}) }}" novalidate>
+    <header class="panel-head"><h2>Room type</h2><p>What it sleeps, how many there are, and what is in them</p></header>
+    <input type="hidden" name="_token" value="{{ csrf_token('property_room_configure') }}">
+    {% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Save again.</span></div>{% endif %}
+    {% include '@VivutioProperty/properties/_room_fields.html.twig' %}
+    <div class="grid-2">
+        <div class="field{{ wrong.on_sale is defined ? ' wrong' }}"><label for="room-on-sale">On sale</label>
+            <select class="select" id="room-on-sale" name="on_sale"><option value="yes"{{ typed.on_sale == 'yes' ? ' selected' }}>On sale</option><option value="no"{{ typed.on_sale == 'no' ? ' selected' }}>Withdrawn &middot; no longer sold; kept with its history</option></select>
+            {{ properties_.hint('on_sale', wrong, null) }}</div>
+    </div>
+    <footer class="panel-foot"><span class="state">No changes</span><button type="reset" class="button quiet">Discard</button><button type="submit" class="button main">Save room type</button></footer>
+</form>
+{% endblock %}

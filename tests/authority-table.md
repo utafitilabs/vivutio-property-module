@@ -73,3 +73,59 @@ Checks: `properties.configure`
 | Staff holding all but the pair | refused |
 | Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/configure |
 | Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/configure |
+
+## property_rooms: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms
+
+Checks: `properties.read`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: Rooms · Probed camp · vivutio |
+| Super Admin | allowed: Rooms · Probed camp · vivutio |
+
+## property_room_add: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms |
+| Super Admin | answered 422 |
+
+## property_room_configure: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms/0199a6f0-9e01-7e10-8000-000000009e02/configure
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: Configure Probed tent · Probed camp · vivutio |
+| Super Admin | allowed: Configure Probed tent · Probed camp · vivutio |
+
+## property_room_configure: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms/0199a6f0-9e01-7e10-8000-000000009e02/configure
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/rooms |

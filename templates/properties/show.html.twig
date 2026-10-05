@@ -1,6 +1,6 @@
-{# A property's record, in the core's record idiom: the band, what it is and
-   its house rules, how it is reached, and who is posted there. Its rooms,
-   seasons, rates and calendar join as tabs with their features. #}
+{# A property's Overview tab, in the record idiom: the band, the tabs, then
+   what it is and its house rules, how it is reached, and who is posted
+   there. Seasons, rates and the calendar join as tabs with their features. #}
 {% extends '@Shell/page.html.twig' %}
 {% import '@Shell/_icons.html.twig' as icons %}
 {% import '@Identity/positions/_macros.html.twig' as positions %}
@@ -10,20 +10,14 @@
 {% block here %}properties{% endblock %}
 
 {% block page %}
-<header class="page-head">
-    <span class="initials">{{ positions.initials(property.name) }}</span>
-    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / {{ property.name }}</nav><div class="title"><h1>{{ property.name }}</h1><span class="about" data-status>{{ properties_.status_chip(property.status) }}</span></div></div>
-    <div class="actions"><a class="button outline" href="{{ path('property_list') }}">{{ icons.icon('left', 15) }} Back to properties</a>{% if door('properties.configure') %}<a class="button outline" href="{{ path('property_configure', {uuid: property.uuid}) }}">Configure</a>{% endif %}</div>
-</header>
+{{ properties_.head(property, band) }}
 
 {% if property.status.value == 'draft' %}<div class="notice warn" role="status">{{ icons.icon('alert') }}<span>{{ property.name }} is a draft: nobody can book it until it is opened.</span></div>{% endif %}
 
-<div class="band">
-    <span class="f"><span class="k">Type</span><span class="v" data-type>{{ property.type.label }}</span></span>
-    <span class="f"><span class="k">Grading</span><span class="v" data-grading>{{ property.grading ? property.grading ~ (property.grading == 1 ? ' star' : ' stars') : 'Not graded' }}</span></span>
-    <span class="f"><span class="k">Posted</span><span class="v">{{ posted|length }}<em>{{ posted|length == 1 ? 'person' : 'people' }}</em></span></span>
-    <span class="f"><span class="k">Departments</span><span class="v">{{ departments|length }}<em>sit here</em></span></span>
-</div>
+
+
+{{ properties_.tabs(property, 'overview') }}
+<div class="intro"><p>What it is and where, its house rules, and who works there</p></div>
 
 <div class="columns">
     <div class="stack">

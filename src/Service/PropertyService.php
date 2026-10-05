@@ -22,11 +22,13 @@ use Vivutio\Property\Enum\PropertyTypeEnum;
 use Vivutio\Property\Exception\InvalidPropertyException;
 use Vivutio\Property\Model\PropertyDetails;
 use Vivutio\Property\Repository\PropertyRepository;
+use Vivutio\Property\Repository\RoomTypeRepository;
 
 /**
  * Properties: named once, each a kind and somewhere, with how it is reached
- * and its house rules, moving through one lifecycle. A property somebody is
- * posted at, or a department sits at, is not archived.
+ * and its house rules, moving through one lifecycle. A property opens only
+ * with a room type on sale; one somebody is posted at, or a department sits
+ * at, is not archived.
  */
 final readonly class PropertyService
 {
@@ -37,6 +39,7 @@ final readonly class PropertyService
         private PropertyRepository $properties,
         private UserRepository $users,
         private DepartmentRepository $departments,
+        private RoomTypeRepository $rooms,
     ) {
     }
 
@@ -285,6 +288,10 @@ final readonly class PropertyService
         $chosen = PropertyStatusEnum::tryFrom($status);
         if (null === $chosen || !\in_array($chosen, $current->choices(), true)) {
             throw new InvalidPropertyException('status', \sprintf('A property that is %s can be %s.', mb_strtolower($current->label()), implode(' or ', array_map(static fn (PropertyStatusEnum $next): string => mb_strtolower($next->label()), \array_slice($current->choices(), 1)))));
+        }
+
+        if (PropertyStatusEnum::Open === $chosen && PropertyStatusEnum::Open !== $current && [] === $this->rooms->findOnSaleByProperty($property)) {
+            throw new InvalidPropertyException('status', \sprintf('%s has no room type on sale, so there is nothing to book: add one on its Rooms tab first.', $property->getName()));
         }
 
         if (!$chosen->isAPlace() && $current->isAPlace()) {

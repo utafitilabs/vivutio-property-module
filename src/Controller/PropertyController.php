@@ -107,6 +107,7 @@ final readonly class PropertyController
             'property' => $property,
             'posted' => $this->directory->postedAt($property),
             'departments' => $this->directory->departmentsAt($property),
+            'band' => $this->directory->band($property),
         ]));
     }
 
@@ -204,6 +205,7 @@ final readonly class PropertyController
         return new Response($this->twig->render('@VivutioProperty/properties/index.html.twig', [
             'properties' => $this->properties->findBy([], ['name' => 'ASC']),
             'posted' => $this->directory->postedCounts(),
+            'units' => $this->directory->unitCounts(),
             'types' => PropertyTypeEnum::cases(),
             'typed' => $typed,
             'wrong' => $wrong,

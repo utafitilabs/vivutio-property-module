@@ -1,0 +1,45 @@
+{# A property's Rooms tab: each room type, smallest first, with what it
+   sleeps, how many there are and what is in them; added by the tiers. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+
+{% block title %}Rooms · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+{{ properties_.head(property, band) }}
+{{ properties_.tabs(property, 'rooms') }}
+<div class="intro"><p>The kinds of room it sells, and how many of each</p></div>
+
+<div class="stack">
+    <section class="panel list">
+        <table class="table">
+            <thead><tr><th>Room type</th><th style="width:220px">Guests</th><th style="width:80px">How many</th><th style="width:120px">On sale</th>{% if door('properties.configure') %}<th style="width:110px"></th>{% endif %}</tr></thead>
+            <tbody>
+            {% for room in rooms %}
+                <tr data-room="{{ room.name }}">
+                    <td><div><b>{{ room.name }}</b><small data-features>{{ room.features|map(f => labels[f] ?? f)|join(' · ') ?: 'No features listed' }}</small></div></td>
+                    <td data-sleeps>{{ properties_.sleeps(room) }}</td>
+                    <td data-count>{{ room.count }}</td>
+                    <td data-on-sale>{% if room.withdrawn %}<span class="chip">Withdrawn</span>{% else %}<span class="chip ok">On sale</span>{% endif %}</td>
+                    {% if door('properties.configure') %}<td><a class="button outline" href="{{ path('property_room_configure', {uuid: property.uuid, room: room.uuid}) }}">Configure</a></td>{% endif %}
+                </tr>
+            {% else %}
+                <tr><td colspan="5"><div class="empty"><b>No room types yet</b><span>Nothing can be booked here until a room type is added.</span></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    {% if door('properties.configure') %}
+    <form class="panel" method="post" action="{{ path('property_room_add', {uuid: property.uuid}) }}" novalidate>
+        <header class="panel-head"><h2>Add a room type</h2><p>A kind of room or tent, and how many of them</p></header>
+        <input type="hidden" name="_token" value="{{ csrf_token('property_room_add') }}">
+        {% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Add it again.</span></div>{% endif %}
+        {% include '@VivutioProperty/properties/_room_fields.html.twig' %}
+        <footer class="panel-foot"><span class="state">It goes on sale when added</span><button type="submit" class="button main">Add the room type</button></footer>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{# A room type's fields, the same on adding and on configuring. #}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+<div class="grid-2">
+    <div class="field{{ wrong.name is defined ? ' wrong' }}"><label for="room-name">Name</label><input class="input" id="room-name" name="name" value="{{ typed.name }}" required maxlength="80">{{ properties_.hint('name', wrong, 'As guests and operators call it: Tented Room') }}</div>
+    <div class="field{{ wrong.count is defined ? ' wrong' }}"><label for="room-count">How many</label><input class="input" id="room-count" name="count" type="number" min="1" value="{{ typed.count }}" required>{{ properties_.hint('count', wrong, 'How many of them the property has') }}</div>
+</div>
+<div class="grid-2">
+    <div class="field{{ wrong.sleeps is defined ? ' wrong' }}"><label for="room-sleeps">Sleeps</label><input class="input" id="room-sleeps" name="sleeps" type="number" min="1" value="{{ typed.sleeps }}" required>{{ properties_.hint('sleeps', wrong, 'Guests in one of them, children included') }}</div>
+    <div class="field{{ wrong.adults is defined ? ' wrong' }}"><label for="room-adults">Adults at most</label><input class="input" id="room-adults" name="adults" type="number" min="1" value="{{ typed.adults }}" required>{{ properties_.hint('adults', wrong, 'A family tent may sleep four, two of them adults') }}</div>
+</div>
+<div class="field{{ wrong.description is defined ? ' wrong' }}"><label for="room-description">Description</label><textarea class="textarea" id="room-description" name="description" rows="3">{{ typed.description }}</textarea>{{ properties_.hint('description', wrong, null) }}</div>
+<div class="field{{ wrong.features is defined ? ' wrong' }}"><span class="label">In the room</span>
+    <div class="grid-3">{% for feature in features %}<label class="check"><input type="checkbox" name="features[]" value="{{ feature.value }}"{{ feature.value in typed.features ? ' checked' }}> {{ feature.label }}</label>{% endfor %}</div>
+    {{ properties_.hint('features', wrong, null) }}
+</div>

@@ -22,10 +22,13 @@ use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Property\Access\PropertyConcerns;
 use Vivutio\Property\Access\PropertyScopes;
 use Vivutio\Property\Controller\PropertyController;
+use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Place\PropertyPlaces;
 use Vivutio\Property\Repository\PropertyRepository;
+use Vivutio\Property\Repository\RoomTypeRepository;
 use Vivutio\Property\Service\PropertyDirectoryService;
 use Vivutio\Property\Service\PropertyService;
+use Vivutio\Property\Service\RoomTypeService;
 use Vivutio\Property\Shell\PropertyMenu;
 
 /*
@@ -57,11 +60,32 @@ return static function (ContainerConfigurator $container): void {
             service(PropertyRepository::class),
             service(UserRepository::class),
             service(DepartmentRepository::class),
+            service(RoomTypeRepository::class),
         ]);
     $services->alias(PropertyService::class, 'property.properties');
 
+    $services->set(RoomTypeRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+
+    $services->set('property.room_types', RoomTypeService::class)
+        ->args([service('doctrine.orm.entity_manager'), service(RoomTypeRepository::class)]);
+    $services->alias(RoomTypeService::class, 'property.room_types');
+
+    $services->set('property.controller.rooms', RoomController::class)
+        ->args([
+            service('twig'),
+            service('property.room_types'),
+            service(RoomTypeRepository::class),
+            service('property.directory'),
+            service('security.csrf.token_manager'),
+            service('router'),
+        ])
+        ->public();
+    $services->alias(RoomController::class, 'property.controller.rooms')->public();
+
     $services->set('property.directory', PropertyDirectoryService::class)
-        ->args([service(UserRepository::class), service(DepartmentRepository::class)]);
+        ->args([service(UserRepository::class), service(DepartmentRepository::class), service(RoomTypeRepository::class)]);
 
     // The properties as places to post people at, beside the core's offices.
     $services->set('property.places', PropertyPlaces::class)

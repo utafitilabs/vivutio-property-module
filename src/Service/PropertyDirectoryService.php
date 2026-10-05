@@ -18,16 +18,19 @@ use Vivutio\Bundle\IdentityBundle\Entity\User;
 use Vivutio\Bundle\IdentityBundle\Repository\DepartmentRepository;
 use Vivutio\Bundle\IdentityBundle\Repository\UserRepository;
 use Vivutio\Property\Entity\Property;
+use Vivutio\Property\Repository\RoomTypeRepository;
 
 /**
- * Who is posted at each property and which departments sit there, as the
- * register and a property's page read them; both are the core's records.
+ * What the register and a property's page read beside the property itself:
+ * who is posted there and which departments sit there, both the core's
+ * records, and how many units it sells and how many guests they sleep.
  */
 final readonly class PropertyDirectoryService
 {
     public function __construct(
         private UserRepository $users,
         private DepartmentRepository $departments,
+        private RoomTypeRepository $rooms,
     ) {
     }
 
@@ -59,5 +62,49 @@ final readonly class PropertyDirectoryService
     public function departmentsAt(Property $property): array
     {
         return $this->departments->findBy(['placeKind' => Property::PLACE_KIND, 'placeId' => $property->getPlaceId()], ['name' => 'ASC']);
+    }
+
+    /**
+     * The units on sale and the guests they sleep: "24 units, sleeping 56".
+     *
+     * @return array{units: int, sleeps: int}
+     */
+    public function size(Property $property): array
+    {
+        $size = ['units' => 0, 'sleeps' => 0];
+        foreach ($this->rooms->findOnSaleByProperty($property) as $room) {
+            $size['units'] += $room->getCount();
+            $size['sleeps'] += $room->getCount() * $room->getSleeps();
+        }
+
+        return $size;
+    }
+
+    /**
+     * @return array<string, int> the units each property has on sale, by its uuid
+     */
+    public function unitCounts(): array
+    {
+        $counts = [];
+        foreach ($this->rooms->findOnSale() as $room) {
+            $id = $room->getProperty()->getPlaceId();
+            $counts[$id] = ($counts[$id] ?? 0) + $room->getCount();
+        }
+
+        return $counts;
+    }
+
+    /**
+     * The figures every tab of a property shows in its band.
+     *
+     * @return array{units: int, sleeps: int, posted: int, departments: int}
+     */
+    public function band(Property $property): array
+    {
+        return [
+            ...$this->size($property),
+            'posted' => \count($this->postedAt($property)),
+            'departments' => \count($this->departmentsAt($property)),
+        ];
     }
 }

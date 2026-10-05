@@ -10,3 +10,37 @@
 {% macro hint(name, wrong, otherwise) -%}
     {%- if wrong[name] is defined or otherwise %}<div class="hint"><span>{{ wrong[name] ?? otherwise }}</span></div>{% endif -%}
 {%- endmacro %}
+
+{# A property's tabs, each its own address; more join as their features do. #}
+{% macro tabs(property, here) -%}
+    <nav class="tabs" aria-label="{{ property.name }}">
+        {%- for tab in [{key: 'overview', label: 'Overview', route: 'property_show'}, {key: 'rooms', label: 'Rooms', route: 'property_rooms'}] -%}
+            <a href="{{ path(tab.route, {uuid: property.uuid}) }}"{{ tab.key == here ? ' aria-current="page"' }}>{{ tab.label }}</a>
+        {%- endfor -%}
+    </nav>
+{%- endmacro %}
+
+{# The head and the band every tab of a property wears, so neither moves
+   when the tab does. #}
+{% macro head(property, band) -%}
+    {% import '@Shell/_icons.html.twig' as icons %}
+    {% import '@Identity/positions/_macros.html.twig' as positions %}
+    {% import _self as properties_ %}
+    <header class="page-head">
+        <span class="initials">{{ positions.initials(property.name) }}</span>
+        <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / {{ property.name }}</nav><div class="title"><h1>{{ property.name }}</h1><span class="about" data-status>{{ properties_.status_chip(property.status) }}</span></div></div>
+        <div class="actions"><a class="button outline" href="{{ path('property_list') }}">{{ icons.icon('left', 15) }} Back to properties</a>{% if door('properties.configure') %}<a class="button outline" href="{{ path('property_configure', {uuid: property.uuid}) }}">Configure</a>{% endif %}</div>
+    </header>
+    <div class="band">
+    <span class="f"><span class="k">Type</span><span class="v" data-type>{{ property.type.label }}</span></span>
+    <span class="f"><span class="k">Units</span><span class="v" data-units>{% if band.units > 0 %}{{ band.units }} <em>units, sleeping {{ band.sleeps }}</em>{% else %}<em>None on sale yet</em>{% endif %}</span></span>
+    <span class="f"><span class="k">Grading</span><span class="v" data-grading>{{ property.grading ? property.grading ~ (property.grading == 1 ? ' star' : ' stars') : 'Not graded' }}</span></span>
+    <span class="f"><span class="k">Posted</span><span class="v">{{ band.posted }}<em>{{ band.posted == 1 ? 'person' : 'people' }}</em></span></span>
+    <span class="f"><span class="k">Departments</span><span class="v">{{ band.departments }}<em>sit here</em></span></span>
+</div>
+{%- endmacro %}
+
+{# What a room type sleeps, as its row says it. #}
+{% macro sleeps(room) -%}
+    Sleeps {{ room.sleeps }}{% if room.adults < room.sleeps %}, {{ room.adults }} {{ room.adults == 1 ? 'adult' : 'adults' }} at most{% endif %}
+{%- endmacro %}

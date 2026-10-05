@@ -29,6 +29,8 @@ use Vivutio\Bundle\IdentityBundle\Enum\TierEnum;
 use Vivutio\Bundle\IdentityBundle\Service\UserService;
 use Vivutio\Property\Entity\Property;
 use Vivutio\Property\Enum\PropertyStatusEnum;
+use Vivutio\Property\Model\RoomTypeDetails;
+use Vivutio\Property\Service\RoomTypeService;
 use Vivutio\Property\Tests\Application\Kernel;
 
 /**
@@ -168,6 +170,9 @@ final class ThePropertiesTest extends WebTestCase
     {
         $this->signedInAs($this->person('Baraka', TierEnum::Admin));
         $camp = $this->add('Vivutio Riverside Camp');
+        $rooms = static::getContainer()->get(RoomTypeService::class);
+        self::assertInstanceOf(RoomTypeService::class, $rooms);
+        $rooms->create($camp, new RoomTypeDetails(name: 'Tented Room', sleeps: '2', adults: '2', count: '10'));
 
         foreach ([['open', 'Open'], ['closed', 'Closed'], ['open', 'Open'], ['archived', 'Archived'], ['closed', 'Closed']] as [$status, $label]) {
             $this->configure($camp, ['status' => $status]);

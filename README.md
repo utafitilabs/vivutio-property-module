@@ -37,14 +37,18 @@ and the pages are gone. The migration builds its one table.
 - **One lifecycle**: a property is added as a draft, opened, closed for now
   and reopened, or archived. A closure for a season belongs to its calendar,
   not here. A property somebody is posted at is not archived.
+- **Room types**, on a property's Rooms tab: what each sleeps and how many of
+  them may be adults, how many the property has, and what is in them. A room
+  type is withdrawn from sale rather than deleted; a property opens only with
+  one on sale, and its size is what it has on sale.
 - **A place to post people**: through the core's place contract, every
   property but an archived one is offered on a person's Position card beside
   the offices, and departments may sit at it.
 - **The `property` scope**, one or more named properties, which a grant may be
   limited to.
 
-Rooms, seasons, rates and the availability calendar arrive next, each in its
-own release.
+Seasons, rates and the availability calendar arrive next, each in its own
+release.
 
 ## Who may do what
 
