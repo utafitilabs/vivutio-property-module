@@ -1,0 +1,29 @@
+{# One night of a property: each room type on sale, how many are free, and
+   what takes the rest. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+
+{% block title %}{{ night.night|date('j M Y') }} · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+<header class="page-head">
+    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / <a href="{{ path('property_calendar', {uuid: property.uuid, month: night.night|date('Y-m')}) }}">{{ property.name }}</a> / {{ night.night|date('j M Y') }}</nav><div class="title"><h1>{{ night.night|date('l j F Y') }}</h1></div></div>
+    <div class="actions"><a class="button outline" href="{{ path('property_calendar', {uuid: property.uuid, month: night.night|date('Y-m')}) }}">{{ icons.icon('left', 15) }} Back to {{ night.night|date('F') }}</a></div>
+</header>
+
+<div class="stack">
+    {% for line in night.rooms %}
+        <section class="panel small" data-room="{{ line.room.name }}">
+            <header class="panel-head"><h2>{{ line.room.name }}</h2><p data-free>{{ line.free }} of {{ line.room.count }} free</p></header>
+            {% for out in line.out %}
+                <div class="fact" data-out><span>{{ out.closure.reason }}:</span> <b>{{ out.units }} out</b></div>
+            {% else %}
+                <p class="hint">Nothing takes any of them this night.</p>
+            {% endfor %}
+        </section>
+    {% else %}
+        <section class="panel"><div class="empty"><b>No room type on sale</b><span>Add one on the Rooms tab.</span></div></section>
+    {% endfor %}
+</div>
+{% endblock %}

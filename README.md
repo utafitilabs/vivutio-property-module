@@ -52,13 +52,18 @@ and the pages are gone. The migration builds its one table.
   rate (a term left empty is not sold); and what a stay costs, priced night by
   night by the one service bookings will use. A period with rates is kept, and
   what the rates mean is not changed under them.
+- **A calendar**, on a property's Calendar tab: a month of nights, each room
+  type on sale with how many are free each night, and a page for each night
+  saying what takes the rest. Only closures are kept, the whole property shut
+  or some units of a room type out of service, each with its reason; what is
+  free is worked out from them.
 - **A place to post people**: through the core's place contract, every
   property but an archived one is offered on a person's Position card beside
   the offices, and departments may sit at it.
 - **The `property` scope**, one or more named properties, which a grant may be
   limited to.
 
-The availability calendar arrives next.
+Cancellation terms arrive next.
 
 ## Who may do what
 

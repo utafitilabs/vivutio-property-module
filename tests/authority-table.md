@@ -228,6 +228,62 @@ Checks: `properties.configure`
 | Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/seasons/0199a6f0-9e01-7e10-8000-000000009e03/configure |
 | Super Admin | not found |
 
+## property_calendar: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/calendar?month=2026-07
+
+Checks: `properties.read`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: Calendar · Probed camp · vivutio |
+| Super Admin | allowed: Calendar · Probed camp · vivutio |
+
+## property_calendar_night: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/calendar/2026-07-04
+
+Checks: `properties.read`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: 4 Jul 2026 · Probed camp · vivutio |
+| Super Admin | allowed: 4 Jul 2026 · Probed camp · vivutio |
+
+## property_closure_add: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/closures
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/calendar |
+| Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/calendar |
+
+## property_closure_remove: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/closures/0199a6f0-9e01-7e10-8000-000000009e07/remove
+
+Checks: `properties.configure`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/calendar |
+| Super Admin | not found |
+
 ## property_rates: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates?year=2026
 
 Checks: `properties.read`

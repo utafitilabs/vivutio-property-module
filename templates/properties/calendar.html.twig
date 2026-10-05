@@ -1,0 +1,85 @@
+{# A property's Calendar tab: a month of nights, each room type on sale down
+   the side with how many are free each night; the closures that touch the
+   month, each with its reason; and, for the tiers, adding one. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+
+{% block title %}Calendar · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+{%- set may = door('properties.configure') -%}
+{%- set before = month.month|date_modify('-1 month') -%}
+{%- set after = month.month|date_modify('+1 month') -%}
+{{ properties_.head(property, band) }}
+{{ properties_.tabs(property, 'calendar') }}
+<div class="intro">
+    <p>How many of each room type are free each night; a night opens its own page</p>
+    <div class="actions">
+        <a class="button outline" href="{{ path('property_calendar', {uuid: property.uuid, month: before|date('Y-m')}) }}">{{ icons.icon('left', 15) }} {{ before|date('F Y') }}</a>
+        <span class="button quiet" aria-current="page">{{ month.month|date('F Y') }}</span>
+        <a class="button outline" href="{{ path('property_calendar', {uuid: property.uuid, month: after|date('Y-m')}) }}">{{ after|date('F Y') }} {{ icons.paths('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', 15) }}</a>
+    </div>
+</div>
+
+{% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Try again.</span></div>{% endif %}
+
+<div class="stack">
+    <section class="panel">
+        <header class="panel-head"><h2>{{ month.month|date('F Y') }}</h2><p>Free each night; a ring is a night with none free</p></header>
+        {% if month.rows is empty %}
+            <div class="empty"><b>No room type on sale</b><span>Add one on the Rooms tab.</span></div>
+        {% else %}
+        <div class="nights-scroll">
+            <table class="nights">
+                <thead><tr><th>Room type</th>{% for night in month.nights %}<th{% if night|date('N') >= 6 %} data-weekend{% endif %}>{{ night|date('D')|first }}<br>{{ night|date('j') }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                {% for row in month.rows %}
+                    <tr data-room="{{ row.room.name }}"><td title="{{ row.room.name }}">{{ row.room.name }}</td>
+                    {% for cell in row.nights %}<td data-night="{{ cell.date|date('Y-m-d') }}"{% if cell.closed %} data-closed{% elseif cell.free < row.room.count %} data-short{% endif %}><a href="{{ path('property_calendar_night', {uuid: property.uuid, night: cell.date|date('Y-m-d')}) }}" title="{{ cell.date|date('j M') }}: {{ cell.free }} of {{ row.room.count }} free">{{ cell.free }}</a></td>{% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="panel list">
+        <header class="panel-head"><h2>Closures</h2><p>Nights it sells less than it has, and why</p></header>
+        <table class="table">
+            <thead><tr><th>Why</th><th>When</th><th>What</th>{% if may %}<th style="width:100px"></th>{% endif %}</tr></thead>
+            <tbody>
+            {% for closure in month.closures %}
+                <tr data-closure="{{ closure.reason }}">
+                    <td><b>{{ closure.reason }}</b></td>
+                    <td data-span>{{ properties_.span(closure) }}</td>
+                    <td data-what>{{ closure.roomType ? closure.roomType.name ~ ', ' ~ closure.units ~ (closure.units == 1 ? ' unit' : ' units') : 'The whole property' }}</td>
+                    {% if may %}<td><form method="post" action="{{ path('property_closure_remove', {uuid: property.uuid, closure: closure.uuid}) }}"><input type="hidden" name="_token" value="{{ csrf_token('property_closure_remove') }}"><button type="submit" class="button quiet">Remove</button></form></td>{% endif %}
+                </tr>
+            {% else %}
+                <tr><td colspan="4"><div class="empty"><b>Nothing is closed in {{ month.month|date('F') }}</b><span>Every unit of every room type is for sale.</span></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    {% if may %}
+    <form class="panel" method="post" action="{{ path('property_closure_add', {uuid: property.uuid}) }}" novalidate>
+        <header class="panel-head"><h2>Add a closure</h2><p>The whole property, or some units of one room type, from a first night to a last</p></header>
+        <input type="hidden" name="_token" value="{{ csrf_token('property_closure_add') }}">
+        <div class="grid-2">
+            <div class="field{{ wrong.room is defined ? ' wrong' }}"><label for="closure-room">What closes</label><select class="select" id="closure-room" name="room"><option value="">The whole property</option>{% for room in rooms %}<option value="{{ room.uuid }}"{{ (room.uuid ~ '') == typed.room ? ' selected' }}>Units of {{ room.name }} ({{ room.count }})</option>{% endfor %}</select>{{ properties_.hint('room', wrong, null) }}</div>
+            <div class="field{{ wrong.units is defined ? ' wrong' }}"><label for="closure-units">How many units</label><input class="input" id="closure-units" name="units" type="number" min="1" value="{{ typed.units }}">{{ properties_.hint('units', wrong, 'Only for units of a room type') }}</div>
+        </div>
+        <div class="grid-3">
+            <div class="field{{ wrong.starts is defined ? ' wrong' }}"><label for="closure-starts">First night</label><input class="input" id="closure-starts" name="starts" type="date" value="{{ typed.starts }}">{{ properties_.hint('starts', wrong, null) }}</div>
+            <div class="field{{ wrong.ends is defined ? ' wrong' }}"><label for="closure-ends">Last night</label><input class="input" id="closure-ends" name="ends" type="date" value="{{ typed.ends }}">{{ properties_.hint('ends', wrong, null) }}</div>
+            <div class="field{{ wrong.reason is defined ? ' wrong' }}"><label for="closure-reason">Why</label><input class="input" id="closure-reason" name="reason" value="{{ typed.reason }}" maxlength="120">{{ properties_.hint('reason', wrong, 'Long rains, Canvas repairs') }}</div>
+        </div>
+        <footer class="panel-foot"><span class="state"></span><button type="submit" class="button main">Add the closure</button></footer>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

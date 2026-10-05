@@ -21,17 +21,20 @@ use Vivutio\Contracts\Place\PlaceSourceInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Property\Access\PropertyConcerns;
 use Vivutio\Property\Access\PropertyScopes;
+use Vivutio\Property\Controller\CalendarController;
 use Vivutio\Property\Controller\PropertyController;
 use Vivutio\Property\Controller\RateController;
 use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
 use Vivutio\Property\Place\PropertyPlaces;
+use Vivutio\Property\Repository\ClosureRepository;
 use Vivutio\Property\Repository\PropertyRepository;
 use Vivutio\Property\Repository\RateRepository;
 use Vivutio\Property\Repository\RateTermsRepository;
 use Vivutio\Property\Repository\RoomTypeRepository;
 use Vivutio\Property\Repository\SeasonPeriodRepository;
 use Vivutio\Property\Repository\SeasonRepository;
+use Vivutio\Property\Service\AvailabilityService;
 use Vivutio\Property\Service\PropertyDirectoryService;
 use Vivutio\Property\Service\PropertyService;
 use Vivutio\Property\Service\RateQuoteService;
@@ -158,6 +161,27 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->public();
     $services->alias(RateController::class, 'property.controller.rates')->public();
+
+    $services->set(ClosureRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+
+    // What is free, night by night: the one place it is worked out.
+    $services->set('property.availability', AvailabilityService::class)
+        ->args([service('doctrine.orm.entity_manager'), service(ClosureRepository::class), service(RoomTypeRepository::class)]);
+    $services->alias(AvailabilityService::class, 'property.availability');
+
+    $services->set('property.controller.calendar', CalendarController::class)
+        ->args([
+            service('twig'),
+            service('property.availability'),
+            service(RoomTypeRepository::class),
+            service('property.directory'),
+            service('security.csrf.token_manager'),
+            service('router'),
+        ])
+        ->public();
+    $services->alias(CalendarController::class, 'property.controller.calendar')->public();
 
     $services->set('property.directory', PropertyDirectoryService::class)
         ->args([service(UserRepository::class), service(DepartmentRepository::class), service(RoomTypeRepository::class)]);
