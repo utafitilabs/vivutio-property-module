@@ -104,13 +104,34 @@ final readonly class CancellationService
 
     public function charge(Quote $stay, \DateTimeImmutable $cancelledOn): CancellationCharge
     {
-        $arrival = $stay->nights[0]['date'];
+        return $this->chargeOf($this->kept($stay), $stay->currency, $cancelledOn);
+    }
+
+    /**
+     * A stay's nights as a booking keeps them: each night's cost and the tiers
+     * in force for it now, so the booking is later charged by these.
+     *
+     * @return list<array{date: string, season: string, total: int, tiers: list<array{days: int, percent: int}>}>
+     */
+    public function kept(Quote $stay): array
+    {
+        return array_map(fn (array $night): array => ['date' => $night['date']->format('Y-m-d'), 'season' => $night['season'], 'total' => $night['total'], 'tiers' => $this->tiersOf($night['period']->getSeason())], $stay->nights);
+    }
+
+    /**
+     * What cancelling costs, from nights as a booking keeps them.
+     *
+     * @param list<array{date: string, season: string, total: int, tiers: list<array{days: int, percent: int}>}> $nights
+     */
+    public function chargeOf(array $nights, string $currency, \DateTimeImmutable $cancelledOn): CancellationCharge
+    {
+        $arrival = new \DateTimeImmutable($nights[0]['date'] ?? 'today');
         $days = (int) $cancelledOn->setTime(0, 0)->diff($arrival)->format('%r%a');
 
         $bySeason = [];
         $freeBefore = null;
-        foreach ($stay->nights as $night) {
-            $tiers = $this->tiersOf($night['period']->getSeason());
+        foreach ($nights as $night) {
+            $tiers = $night['tiers'];
             if ([] !== $tiers) {
                 $freeBefore = max($freeBefore ?? 0, $tiers[0]['days']);
             }
@@ -119,7 +140,7 @@ final readonly class CancellationService
             $bySeason[$night['season']] = [$percent, $of + $night['total'], $charged + intdiv($night['total'] * $percent + 50, 100)];
         }
 
-        return new CancellationCharge($stay->currency, $days, $bySeason, array_sum(array_map(static fn (array $line): int => $line[2], $bySeason)), $freeBefore);
+        return new CancellationCharge($currency, $days, $bySeason, array_sum(array_map(static fn (array $line): int => $line[2], $bySeason)), $freeBefore);
     }
 
     /**

@@ -1,0 +1,59 @@
+{# A new booking at a property: who it is for and who made it, the stay, a
+   line for each room type, held or confirmed. Priced when it is recorded. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+
+{% block title %}New booking · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+<header class="page-head">
+    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / <a href="{{ path('property_bookings', {uuid: property.uuid}) }}">{{ property.name }}</a> / New booking</nav><div class="title"><h1>New booking</h1><span class="about">{{ property.name }}</span></div></div>
+    <div class="actions"><a class="button outline" href="{{ path('property_bookings', {uuid: property.uuid}) }}">{{ icons.icon('left', 15) }} Back to the bookings</a></div>
+</header>
+
+{% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Try again.</span></div>{% endif %}
+{% if wrong.property is defined %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ wrong.property }}</span></div>{% endif %}
+
+<form class="panel" method="post" action="{{ path('property_booking_new', {uuid: property.uuid}) }}" novalidate>
+    <header class="panel-head"><h2>Booking</h2><p>Priced by the rates and terms in force when it is recorded, and kept</p></header>
+    <input type="hidden" name="_token" value="{{ csrf_token('property_booking_new') }}">
+    <div class="grid-3">
+        <div class="field{{ wrong.guest is defined ? ' wrong' }}"><label for="booking-guest">For</label><input class="input" id="booking-guest" name="guest" value="{{ typed.guest }}" maxlength="120">{{ properties_.hint('guest', wrong, 'The lead guest, or the party: Mollel party') }}</div>
+        <div class="field{{ wrong.booked_by is defined ? ' wrong' }}"><label for="booking-by">Booked by</label><input class="input" id="booking-by" name="booked_by" value="{{ typed.bookedBy }}" maxlength="120">{{ properties_.hint('booked_by', wrong, 'An operator or agent, or empty for the guest directly') }}</div>
+        <div class="field{{ wrong.their_reference is defined ? ' wrong' }}"><label for="booking-theirs">Their reference</label><input class="input" id="booking-theirs" name="their_reference" value="{{ typed.theirReference }}" maxlength="60">{{ properties_.hint('their_reference', wrong, null) }}</div>
+    </div>
+    <div class="grid-3">
+        <div class="field{{ wrong.arrival is defined ? ' wrong' }}"><label for="booking-arrival">Arriving</label><input class="input" id="booking-arrival" name="arrival" type="date" value="{{ typed.arrival }}" min="{{ today|date('Y-m-d') }}">{{ properties_.hint('arrival', wrong, null) }}</div>
+        <div class="field{{ wrong.nights is defined ? ' wrong' }}"><label for="booking-nights">Nights</label><input class="input" id="booking-nights" name="nights" type="number" min="1" value="{{ typed.nights ?: '1' }}">{{ properties_.hint('nights', wrong, null) }}</div>
+    </div>
+
+    <span class="label">Rooms</span>
+    {% if wrong.lines is defined %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ wrong.lines }}</span></div>{% endif %}
+    <table class="table" data-lines>
+        <thead><tr><th>Room type</th><th style="width:90px">Rooms</th><th style="width:90px">Adults</th><th style="width:90px">Children</th><th style="width:90px">Infants</th><th style="width:190px">Board basis</th></tr></thead>
+        <tbody>
+        {% for line in lines %}
+            {%- set i = loop.index0 -%}
+            <tr>
+                <td class="{{ wrong['lines[' ~ i ~ '][room]'] is defined ? 'wrong' }}"><select class="select" name="lines[{{ i }}][room]" aria-label="Room type, line {{ i + 1 }}"><option value="">None</option>{% for room in rooms %}<option value="{{ room.uuid }}"{{ (room.uuid ~ '') == line.room ? ' selected' }}>{{ room.name }} &middot; sleeps {{ room.sleeps }}</option>{% endfor %}</select></td>
+                {% for part in ['rooms', 'adults', 'children', 'infants'] %}<td class="{{ wrong['lines[' ~ i ~ '][' ~ part ~ ']'] is defined ? 'wrong' }}"><input class="input" name="lines[{{ i }}][{{ part }}]" value="{{ line[part] }}" inputmode="numeric" aria-label="{{ part|capitalize }}, line {{ i + 1 }}{{ part != 'rooms' ? ', in each room' }}"></td>{% endfor %}
+                <td class="{{ wrong['lines[' ~ i ~ '][board]'] is defined ? 'wrong' }}"><select class="select" name="lines[{{ i }}][board]" aria-label="Board basis, line {{ i + 1 }}">{% for basis in boards %}<option value="{{ basis.value }}"{{ basis.value == line.board ? ' selected' }}>{{ basis.label }}</option>{% endfor %}</select></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% for key, said in wrong|filter((v, k) => k starts with 'lines[') %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ said }}</span></div>{% endfor %}
+    <p class="hint">Adults, children and infants are the party in each room of the line.</p>
+
+    <span class="label">Held or confirmed</span>
+    <div class="grid-3">
+        <div class="field{{ wrong.status is defined ? ' wrong' }}"><label for="booking-status">It is</label><select class="select" id="booking-status" name="status"><option value="provisional"{{ typed.status == 'provisional' ? ' selected' }}>Provisional, held until a day</option><option value="confirmed"{{ typed.status != 'provisional' ? ' selected' }}>Confirmed</option></select>{{ properties_.hint('status', wrong, null) }}</div>
+        <div class="field{{ wrong.held_until is defined ? ' wrong' }}"><label for="booking-held">Held until</label><input class="input" id="booking-held" name="held_until" type="date" value="{{ typed.heldUntil }}">{{ properties_.hint('held_until', wrong, 'A provisional booking holds its rooms to the end of this day') }}</div>
+    </div>
+    <div class="field{{ wrong.notes is defined ? ' wrong' }}"><label for="booking-notes">Notes</label><textarea class="textarea" id="booking-notes" name="notes" rows="3">{{ typed.notes }}</textarea>{{ properties_.hint('notes', wrong, null) }}</div>
+
+    <footer class="panel-foot"><span class="state">Rooms are checked free every night of the stay</span><button type="submit" class="button main">Record the booking</button></footer>
+</form>
+{% endblock %}

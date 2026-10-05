@@ -17,7 +17,7 @@
         <section class="panel small" data-room="{{ line.room.name }}">
             <header class="panel-head"><h2>{{ line.room.name }}</h2><p data-free>{{ line.free }} of {{ line.room.count }} free</p></header>
             {% for out in line.out %}
-                <div class="fact" data-out><span>{{ out.closure.reason }}:</span> <b>{{ out.units }} out</b></div>
+                <div class="fact" data-out><span>{% if out.booking %}<a href="{{ path('property_booking', {uuid: property.uuid, booking: out.booking.uuid}) }}">{{ out.label }}</a>{% else %}{{ out.label }}{% endif %}:</span> <b>{{ out.units }} {{ out.booking ? 'booked' : 'out' }}</b></div>
             {% else %}
                 <p class="hint">Nothing takes any of them this night.</p>
             {% endfor %}

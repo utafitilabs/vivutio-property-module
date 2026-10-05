@@ -1,0 +1,49 @@
+{# A property's Bookings tab: every booking received, the soonest first, each
+   with its stay, its rooms and where it stands; and, for whoever may record
+   one, a new booking. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+{% import '@VivutioProperty/bookings/_macros.html.twig' as bookings_ %}
+
+{% block title %}Bookings · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+{{ properties_.head(property, band) }}
+{{ properties_.tabs(property, 'bookings') }}
+<div class="intro">
+    <p>Bookings received here, the soonest arrival first</p>
+    {% if door('property_bookings.record', property) %}<div class="actions"><a class="button main" href="{{ path('property_booking_new', {uuid: property.uuid}) }}">New booking</a></div>{% endif %}
+</div>
+
+{% if said %}<div class="notice" role="status">{{ icons.icon('check') }}<span>{{ said }}</span></div>{% endif %}
+
+<form class="tools" method="get" action="{{ path('property_bookings', {uuid: property.uuid}) }}" data-tools>
+    <span data-facet="status">
+        <a class="chip" data-chip href="{{ path('property_bookings', {uuid: property.uuid}) }}"{{ status is null ? ' aria-current="true"' }}>All <em>{{ total }}</em></a>
+        {% for option in statuses %}<a class="chip" data-chip href="{{ path('property_bookings', {uuid: property.uuid, status: option.value}) }}"{{ status == option ? ' aria-current="true"' }}>{{ option.label }} <em>{{ counts[option.value] }}</em></a>{% endfor %}
+    </span>
+    <span class="shown" data-shown>showing <b>{{ bookings|length }}</b> of {{ total }}</span>
+</form>
+
+<section class="panel list">
+    <table class="table">
+        <thead><tr><th>Booking</th><th>Stay</th><th style="width:150px">Rooms</th><th style="width:140px">Status</th><th style="width:130px">Total</th><th style="width:90px"></th></tr></thead>
+        <tbody>
+        {% for booking in bookings %}
+            <tr data-booking="{{ booking.reference }}">
+                <td><div><b>{{ booking.reference }}</b><small>{{ booking.guest }}{% if booking.bookedBy %} &middot; {{ booking.bookedBy }}{% endif %}</small></div></td>
+                <td data-stay>{{ bookings_.stay(booking) }}</td>
+                <td data-rooms>{% for line in booking.lines %}{{ line.rooms }} {{ line.roomType.name }}{{ not loop.last ? ', ' }}{% endfor %}</td>
+                <td data-status>{{ bookings_.status_chip(booking, now) }}</td>
+                <td data-total>{{ bookings_.money(booking.currency, booking.total) }}</td>
+                <td><a class="button outline" href="{{ path('property_booking', {uuid: property.uuid, booking: booking.uuid}) }}">Open</a></td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6"><div class="empty"><b>{{ total == 0 ? 'No bookings yet' : 'Nothing matches' }}</b><span>{{ total == 0 ? 'A booking received here is recorded with New booking.' : '' }}</span></div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

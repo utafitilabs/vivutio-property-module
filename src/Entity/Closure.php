@@ -122,7 +122,7 @@ class Closure
             return $room->getCount();
         }
 
-        return $this->roomType === $room ? (int) $this->units : 0;
+        return $this->roomType->getId() === $room->getId() ? (int) $this->units : 0;
     }
 
     public function covers(\DateTimeImmutable $night): bool

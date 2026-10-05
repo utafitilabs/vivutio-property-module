@@ -23,6 +23,7 @@ use Vivutio\Contracts\Place\ReachSourceInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Property\Access\PropertyConcerns;
 use Vivutio\Property\Access\PropertyScopes;
+use Vivutio\Property\Controller\BookingController;
 use Vivutio\Property\Controller\CalendarController;
 use Vivutio\Property\Controller\CancellationController;
 use Vivutio\Property\Controller\PropertyController;
@@ -33,6 +34,8 @@ use Vivutio\Property\Identity\PropertyPositionCard;
 use Vivutio\Property\Place\PropertyPlaces;
 use Vivutio\Property\Place\PropertyReachSource;
 use Vivutio\Property\Repository\ClosureRepository;
+use Vivutio\Property\Repository\PropertyBookingLineRepository;
+use Vivutio\Property\Repository\PropertyBookingRepository;
 use Vivutio\Property\Repository\PropertyReachRepository;
 use Vivutio\Property\Repository\PropertyRepository;
 use Vivutio\Property\Repository\RateRepository;
@@ -42,6 +45,7 @@ use Vivutio\Property\Repository\SeasonPeriodRepository;
 use Vivutio\Property\Repository\SeasonRepository;
 use Vivutio\Property\Service\AvailabilityService;
 use Vivutio\Property\Service\CancellationService;
+use Vivutio\Property\Service\PropertyBookingService;
 use Vivutio\Property\Service\PropertyDirectoryService;
 use Vivutio\Property\Service\PropertyGlanceService;
 use Vivutio\Property\Service\PropertyService;
@@ -194,8 +198,43 @@ return static function (ContainerConfigurator $container): void {
 
     // What is free, night by night: the one place it is worked out.
     $services->set('property.availability', AvailabilityService::class)
-        ->args([service('doctrine.orm.entity_manager'), service(ClosureRepository::class), service(RoomTypeRepository::class)]);
+        ->args([service('doctrine.orm.entity_manager'), service(ClosureRepository::class), service(RoomTypeRepository::class), service(PropertyBookingRepository::class), service('clock')]);
     $services->alias(AvailabilityService::class, 'property.availability');
+
+    $services->set(PropertyBookingRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+    $services->set(PropertyBookingLineRepository::class)
+        ->args([service('doctrine')])
+        ->tag('doctrine.repository_service');
+
+    // Bookings received: recorded, confirmed and cancelled in one place.
+    $services->set('property.bookings', PropertyBookingService::class)
+        ->args([
+            service('doctrine.orm.entity_manager'),
+            service('clock'),
+            service(PropertyBookingRepository::class),
+            service(RoomTypeRepository::class),
+            service('property.rate_quotes'),
+            service('property.availability'),
+            service('property.cancellation'),
+        ]);
+    $services->alias(PropertyBookingService::class, 'property.bookings');
+
+    $services->set('property.controller.bookings', BookingController::class)
+        ->args([
+            service('twig'),
+            service('property.bookings'),
+            service(PropertyBookingRepository::class),
+            service(RoomTypeRepository::class),
+            service('property.directory'),
+            service('property.cancellation'),
+            service('clock'),
+            service('security.csrf.token_manager'),
+            service('router'),
+        ])
+        ->public();
+    $services->alias(BookingController::class, 'property.controller.bookings')->public();
 
     $services->set('property.controller.calendar', CalendarController::class)
         ->args([

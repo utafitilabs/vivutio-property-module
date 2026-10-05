@@ -17,6 +17,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
 use Vivutio\Bundle\IdentityBundle\Test\AuthorityTestCase;
 use Vivutio\Bundle\IdentityBundle\Test\Probe;
+use Vivutio\Property\Controller\BookingController;
 use Vivutio\Property\Controller\CalendarController;
 use Vivutio\Property\Controller\CancellationController;
 use Vivutio\Property\Controller\PropertyController;
@@ -25,9 +26,11 @@ use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
 use Vivutio\Property\Entity\Closure;
 use Vivutio\Property\Entity\Property;
+use Vivutio\Property\Entity\PropertyBooking;
 use Vivutio\Property\Entity\RoomType;
 use Vivutio\Property\Entity\Season;
 use Vivutio\Property\Entity\SeasonPeriod;
+use Vivutio\Property\Enum\BookingStatusEnum;
 use Vivutio\Property\Enum\PropertyTypeEnum;
 use Vivutio\Property\Enum\SeasonKindEnum;
 use Vivutio\Property\Tests\Application\Kernel;
@@ -50,6 +53,7 @@ final class PropertyAuthorityTest extends AuthorityTestCase
     private const string PERIOD_UUID = '0199a6f0-9e01-7e10-8000-000000009e04';
     private const string PRICED_PERIOD_UUID = '0199a6f0-9e01-7e10-8000-000000009e06';
     private const string CLOSURE_UUID = '0199a6f0-9e01-7e10-8000-000000009e07';
+    private const string BOOKING = self::PROPERTY.'/bookings/0199a6f0-9e01-7e10-8000-000000009e08';
     private const string EMPTY_SEASON = self::PROPERTY.'/seasons/0199a6f0-9e01-7e10-8000-000000009e05';
 
     protected static function getKernelClass(): string
@@ -82,6 +86,12 @@ final class PropertyAuthorityTest extends AuthorityTestCase
             new Probe(CalendarController::REMOVE, 'POST', self::PROPERTY.'/closures/'.self::CLOSURE_UUID.'/remove', formAt: self::PROPERTY.'/calendar?month=2026-07'),
             new Probe(CancellationController::CONFIGURE, 'GET', self::PROPERTY.'/cancellation'),
             new Probe(CancellationController::CONFIGURE, 'POST', self::PROPERTY.'/cancellation', ['card' => 'property', 'tiers' => [['days' => '30', 'percent' => '100']]], formAt: self::PROPERTY.'/cancellation'),
+            new Probe(BookingController::BOOKINGS, 'GET', self::PROPERTY.'/bookings'),
+            new Probe(BookingController::NEW, 'GET', self::PROPERTY.'/bookings/new'),
+            new Probe(BookingController::NEW, 'POST', self::PROPERTY.'/bookings/new', ['guest' => 'Probed party', 'arrival' => '2099-07-01', 'nights' => '2', 'status' => 'confirmed', 'lines' => [['room' => self::ROOM_UUID, 'rooms' => '1', 'adults' => '2', 'children' => '0', 'infants' => '0', 'board' => 'full_board']]], formAt: self::PROPERTY.'/bookings/new'),
+            new Probe(BookingController::BOOKING, 'GET', self::BOOKING),
+            new Probe(BookingController::CONFIRM, 'POST', self::BOOKING.'/confirm', formAt: self::BOOKING),
+            new Probe(BookingController::CANCEL, 'POST', self::BOOKING.'/cancel', ['reason' => 'Probed'], formAt: self::BOOKING),
             new Probe(RateController::RATES, 'GET', self::PROPERTY.'/rates?year=2026'),
             new Probe(RateController::SETUP, 'POST', self::PROPERTY.'/rates/setup', ['currency' => 'USD', 'pricing' => 'per_person', 'boards' => ['full_board'], 'year' => '2026'], formAt: self::PROPERTY.'/rates?year=2026'),
             new Probe(RateController::SAVE, 'POST', self::PROPERTY.'/rates', ['year' => '2026', 'board' => 'full_board', 'amounts' => [self::ROOM_UUID => [self::PRICED_PERIOD_UUID => '310']]], formAt: self::PROPERTY.'/rates?year=2026'),
@@ -122,6 +132,7 @@ final class PropertyAuthorityTest extends AuthorityTestCase
         $season = (new Season($camp))->setName('Probed season')->setKind(SeasonKindEnum::High)->setUuid(Uuid::fromString(self::SEASON_UUID));
         $entityManager->persist($season);
         $entityManager->persist((new Closure($camp, new \DateTimeImmutable('2026-07-10'), new \DateTimeImmutable('2026-07-12'), 'Probed closure'))->setUuid(Uuid::fromString(self::CLOSURE_UUID)));
+        $entityManager->persist((new PropertyBooking($camp, 'PC-0001', 'Probed party', new \DateTimeImmutable('2099-07-01'), 2, 'USD'))->setStatus(BookingStatusEnum::Provisional)->setHeldUntil(new \DateTimeImmutable('2099-06-01'))->setUuid(Uuid::fromString('0199a6f0-9e01-7e10-8000-000000009e08')));
         $green = (new Season($camp))->setName('Probed green season')->setKind(SeasonKindEnum::Low);
         $entityManager->persist($green);
         $entityManager->persist((new SeasonPeriod($green, new \DateTimeImmutable('2026-11-01'), new \DateTimeImmutable('2027-05-31')))->setUuid(Uuid::fromString(self::PRICED_PERIOD_UUID)));

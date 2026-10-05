@@ -1,0 +1,73 @@
+{# A booking's own page: the stay and who it is for, its rooms and what they
+   cost when it was made, its nights, its cancellation terms as kept, and,
+   for whoever may manage it, confirming and cancelling. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+{% import '@VivutioProperty/properties/_macros.html.twig' as properties_ %}
+{% import '@VivutioProperty/bookings/_macros.html.twig' as bookings_ %}
+
+{% block title %}{{ booking.reference }} · {{ property.name }}{% endblock %}
+{% block here %}properties{% endblock %}
+
+{% block page %}
+{%- set may = door('property_bookings.manage', booking) -%}
+<header class="page-head">
+    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('property_list') }}">Properties</a> / <a href="{{ path('property_bookings', {uuid: property.uuid}) }}">{{ property.name }}</a> / {{ booking.reference }}</nav><div class="title"><h1>{{ booking.reference }}</h1><span class="about" data-status>{{ bookings_.status_chip(booking, now) }}</span></div></div>
+    <div class="actions"><a class="button outline" href="{{ path('property_bookings', {uuid: property.uuid}) }}">{{ icons.icon('left', 15) }} Back to the bookings</a></div>
+</header>
+
+{% if said %}<div class="notice" role="status">{{ icons.icon('check') }}<span>{{ said }}</span></div>{% endif %}
+{% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Try again.</span></div>{% endif %}
+{% for said in wrong %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ said }}</span></div>{% endfor %}
+{% if lapsed %}<div class="notice warn" role="status">{{ icons.icon('alert') }}<span>Its hold lapsed on {{ booking.heldUntil|date('j M Y') }}: its rooms are no longer held. It can still be confirmed while they are free.</span></div>{% endif %}
+
+<div class="band">
+    <span class="f"><span class="k">Stay</span><span class="v" data-stay>{{ booking.nights }}<em>{{ booking.nights == 1 ? 'night' : 'nights' }}, {{ booking.arrival|date('j M') }} – {{ booking.departure|date('j M Y') }}</em></span></span>
+    <span class="f"><span class="k">Total</span><span class="v" data-total>{{ bookings_.money(booking.currency, booking.total) }}</span></span>
+    {% if booking.cancellationCharge is not null %}<span class="f"><span class="k">Cancelling cost</span><span class="v" data-cancellation-charge>{{ bookings_.money(booking.currency, booking.cancellationCharge) }}</span></span>{% endif %}
+</div>
+
+<div class="columns">
+    <div class="stack">
+        <section class="panel">
+            <header class="panel-head"><h2>Rooms</h2><p>As priced when it was made</p></header>
+            {% for line in booking.lines %}
+                <div class="fact" data-line="{{ line.roomType.name }}"><span>{{ line.rooms }} {{ line.roomType.name }} &middot; {{ line.adults }} {{ line.adults == 1 ? 'adult' : 'adults' }}{% if line.children %}, {{ line.children }} {{ line.children == 1 ? 'child' : 'children' }}{% endif %}{% if line.infants %}, {{ line.infants }} {{ line.infants == 1 ? 'infant' : 'infants' }}{% endif %} in each &middot; {{ line.board.label }}</span><b>{{ bookings_.money(booking.currency, line.amount) }}</b></div>
+            {% endfor %}
+        </section>
+        <section class="panel">
+            <header class="panel-head"><h2>Nights</h2><p>Each night's season and cost</p></header>
+            {% for night in booking.pricedNights %}
+                <div class="fact" data-night="{{ night.date }}"><span>{{ night.date|date('D j M Y') }} &middot; {{ night.season }}</span><b>{{ bookings_.money(booking.currency, night.total) }}</b></div>
+            {% endfor %}
+        </section>
+    </div>
+    <aside class="aside stack">
+        <section class="panel small">
+            <header class="panel-head"><h2>For</h2></header>
+            <div class="fact"><span>Guest</span><b data-guest>{{ booking.guest }}</b></div>
+            <div class="fact"><span>Booked by</span><b>{{ booking.bookedBy ?? 'The guest directly' }}</b></div>
+            {% if booking.theirReference %}<div class="fact"><span>Their reference</span><b>{{ booking.theirReference }}</b></div>{% endif %}
+            {% if booking.notes %}<p class="hint">{{ booking.notes|nl2br }}</p>{% endif %}
+        </section>
+        <section class="panel small" data-terms>
+            <header class="panel-head"><h2>Cancellation</h2><p>The terms it was made under</p></header>
+            {% for band in bands %}<div class="fact"><b>{{ band }}</b></div>{% endfor %}
+            {% if charge_today %}<p class="hint" data-charge-today>Cancelling today would cost {{ charge_today.says(charge_today.total) }}.</p>{% endif %}
+            {% if booking.cancelledAt %}<p class="hint">Cancelled on {{ booking.cancelledAt|date('j M Y') }}: {{ booking.cancellationReason }}</p>{% endif %}
+        </section>
+        {% if may and booking.status.value != 'cancelled' %}
+        <section class="panel small" data-actions>
+            <header class="panel-head"><h2>Change it</h2></header>
+            {% if booking.status.value == 'provisional' %}
+                <form method="post" action="{{ path('property_booking_confirm', {uuid: property.uuid, booking: booking.uuid}) }}"><input type="hidden" name="_token" value="{{ csrf_token('property_booking_confirm') }}"><button type="submit" class="button main">Confirm the booking</button></form>
+            {% endif %}
+            <form method="post" action="{{ path('property_booking_cancel', {uuid: property.uuid, booking: booking.uuid}) }}"><input type="hidden" name="_token" value="{{ csrf_token('property_booking_cancel') }}">
+                <div class="field"><label for="cancel-reason">Why it is cancelled</label><input class="input" id="cancel-reason" name="reason" maxlength="200"></div>
+                <button type="submit" class="button danger">Cancel the booking</button>
+            </form>
+        </section>
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}

@@ -14,19 +14,23 @@ declare(strict_types=1);
 namespace Vivutio\Property\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Clock\ClockInterface;
 use Vivutio\Property\Entity\Closure;
 use Vivutio\Property\Entity\Property;
+use Vivutio\Property\Entity\PropertyBooking;
 use Vivutio\Property\Entity\RoomType;
 use Vivutio\Property\Exception\InvalidClosureException;
 use Vivutio\Property\Model\AvailabilityMonth;
 use Vivutio\Property\Model\AvailabilityNight;
 use Vivutio\Property\Repository\ClosureRepository;
+use Vivutio\Property\Repository\PropertyBookingRepository;
 use Vivutio\Property\Repository\RoomTypeRepository;
 
 /**
  * What a property has free, night by night: each room type's count, less
- * what its closures take. Only the closures are kept; every night is worked
- * out from them, so nothing is copied that could drift.
+ * what its closures take and what its bookings hold. Only the closures and the
+ * bookings are kept; every night is worked out from them, so nothing is copied
+ * that could drift.
  */
 final readonly class AvailabilityService
 {
@@ -34,6 +38,8 @@ final readonly class AvailabilityService
         private EntityManagerInterface $entityManager,
         private ClosureRepository $closures,
         private RoomTypeRepository $rooms,
+        private PropertyBookingRepository $bookings,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -98,7 +104,7 @@ final readonly class AvailabilityService
     /** How many of a room type are free on a night. */
     public function free(RoomType $room, \DateTimeImmutable $night): int
     {
-        return self::freeOf($room, $night, $this->closures->findByPropertyBetween($room->getProperty(), $night, $night));
+        return $this->freeOf($room, $night, $this->closures->findByPropertyBetween($room->getProperty(), $night, $night), $this->holding($room->getProperty(), $night, $night));
     }
 
     public function month(Property $property, int $year, int $month): AvailabilityMonth
@@ -106,6 +112,7 @@ final readonly class AvailabilityService
         $first = new \DateTimeImmutable(\sprintf('%04d-%02d-01', $year, $month));
         $last = $first->modify('last day of this month');
         $closures = $this->closures->findByPropertyBetween($property, $first, $last);
+        $bookings = $this->holding($property, $first, $last);
 
         $nights = [];
         for ($night = $first; $night <= $last; $night = $night->modify('+1 day')) {
@@ -116,7 +123,7 @@ final readonly class AvailabilityService
         foreach ($this->rooms->findOnSaleByProperty($property) as $room) {
             $cells = [];
             foreach ($nights as $night) {
-                $free = self::freeOf($room, $night, $closures);
+                $free = $this->freeOf($room, $night, $closures, $bookings);
                 $cells[] = ['date' => $night, 'free' => $free, 'closed' => 0 === $free];
             }
             $rows[] = ['room' => $room, 'nights' => $cells];
@@ -128,25 +135,33 @@ final readonly class AvailabilityService
     public function night(Property $property, \DateTimeImmutable $night): AvailabilityNight
     {
         $closures = $this->closures->findByPropertyBetween($property, $night, $night);
+        $bookings = $this->holding($property, $night, $night);
         $rooms = [];
         foreach ($this->rooms->findOnSaleByProperty($property) as $room) {
             $out = [];
             foreach ($closures as $closure) {
                 $taken = $closure->takes($room);
                 if ($taken > 0) {
-                    $out[] = ['closure' => $closure, 'units' => min($taken, $room->getCount())];
+                    $out[] = ['label' => $closure->getReason(), 'units' => min($taken, $room->getCount()), 'booking' => null];
                 }
             }
-            $rooms[] = ['room' => $room, 'free' => self::freeOf($room, $night, $closures), 'out' => $out];
+            foreach ($bookings as $booking) {
+                $taken = self::roomsOf($booking, $room);
+                if ($taken > 0) {
+                    $out[] = ['label' => $booking->getReference().' · '.$booking->getGuest(), 'units' => $taken, 'booking' => $booking];
+                }
+            }
+            $rooms[] = ['room' => $room, 'free' => $this->freeOf($room, $night, $closures, $bookings), 'out' => $out];
         }
 
         return new AvailabilityNight($night, $rooms);
     }
 
     /**
-     * @param list<Closure> $closures
+     * @param list<Closure>         $closures
+     * @param list<PropertyBooking> $bookings
      */
-    private static function freeOf(RoomType $room, \DateTimeImmutable $night, array $closures): int
+    private function freeOf(RoomType $room, \DateTimeImmutable $night, array $closures, array $bookings): int
     {
         $free = $room->getCount();
         foreach ($closures as $closure) {
@@ -154,8 +169,37 @@ final readonly class AvailabilityService
                 $free -= $closure->takes($room);
             }
         }
+        foreach ($bookings as $booking) {
+            if ($booking->covers($night)) {
+                $free -= self::roomsOf($booking, $room);
+            }
+        }
 
         return max(0, $free);
+    }
+
+    /**
+     * The bookings that hold rooms now, sleeping any night from the first to the last.
+     *
+     * @return list<PropertyBooking>
+     */
+    private function holding(Property $property, \DateTimeImmutable $first, \DateTimeImmutable $last): array
+    {
+        $now = $this->clock->now();
+
+        return array_values(array_filter($this->bookings->findHoldingBetween($property, $first, $last), static fn (PropertyBooking $booking): bool => $booking->holdsRooms($now)));
+    }
+
+    private static function roomsOf(PropertyBooking $booking, RoomType $room): int
+    {
+        $rooms = 0;
+        foreach ($booking->getLines() as $line) {
+            if ($line->getRoomType()->getId() === $room->getId()) {
+                $rooms += $line->getRooms();
+            }
+        }
+
+        return $rooms;
     }
 
     /**

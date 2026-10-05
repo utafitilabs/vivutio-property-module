@@ -1,0 +1,13 @@
+{# What a booking's facts read as, the same in the list and on its page. #}
+{% macro status_chip(booking, now) -%}
+    {%- if booking.status.value == 'provisional' and booking.isLapsed(now) -%}<span class="chip warn">Hold lapsed</span>
+    {%- elseif booking.status.value == 'provisional' -%}<span class="chip">Held to {{ booking.heldUntil|date('j M') }}</span>
+    {%- elseif booking.status.value == 'confirmed' -%}<span class="chip ok">Confirmed</span>
+    {%- else -%}<span class="chip">Cancelled</span>{%- endif -%}
+{%- endmacro %}
+
+{% macro stay(booking) -%}
+    {{ booking.arrival|date('j M') }} – {{ booking.departure|date('j M Y') }} &middot; {{ booking.nights }} {{ booking.nights == 1 ? 'night' : 'nights' }}
+{%- endmacro %}
+
+{% macro money(currency, cents) -%}{{ currency }} {{ (cents / 100)|number_format(2) }}{%- endmacro %}

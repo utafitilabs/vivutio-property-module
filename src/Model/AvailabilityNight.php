@@ -13,17 +13,17 @@ declare(strict_types=1);
 
 namespace Vivutio\Property\Model;
 
-use Vivutio\Property\Entity\Closure;
+use Vivutio\Property\Entity\PropertyBooking;
 use Vivutio\Property\Entity\RoomType;
 
 /**
  * One night of a property: each room type on sale, how many are free, and
- * what takes the rest.
+ * what takes the rest, closures and bookings.
  */
 final readonly class AvailabilityNight
 {
     /**
-     * @param list<array{room: RoomType, free: int, out: list<array{closure: Closure, units: int}>}> $rooms
+     * @param list<array{room: RoomType, free: int, out: list<array{label: string, units: int, booking: PropertyBooking|null}>}> $rooms
      */
     public function __construct(
         public \DateTimeImmutable $night,

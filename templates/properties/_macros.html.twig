@@ -14,8 +14,10 @@
 {# A property's tabs, each its own address; more join as their features do. #}
 {% macro tabs(property, here) -%}
     <nav class="tabs" aria-label="{{ property.name }}">
-        {%- for tab in [{key: 'overview', label: 'Overview', route: 'property_show'}, {key: 'rooms', label: 'Rooms', route: 'property_rooms'}, {key: 'seasons', label: 'Seasons', route: 'property_seasons'}, {key: 'rates', label: 'Rates', route: 'property_rates'}, {key: 'calendar', label: 'Calendar', route: 'property_calendar'}] -%}
+        {%- for tab in [{key: 'overview', label: 'Overview', route: 'property_show'}, {key: 'rooms', label: 'Rooms', route: 'property_rooms'}, {key: 'seasons', label: 'Seasons', route: 'property_seasons'}, {key: 'rates', label: 'Rates', route: 'property_rates'}, {key: 'calendar', label: 'Calendar', route: 'property_calendar'}, {key: 'bookings', label: 'Bookings', route: 'property_bookings', pair: 'property_bookings.read'}] -%}
+            {%- if tab.pair is not defined or door(tab.pair, property) -%}
             <a href="{{ path(tab.route, {uuid: property.uuid}) }}"{{ tab.key == here ? ' aria-current="page"' }}>{{ tab.label }}</a>
+            {%- endif -%}
         {%- endfor -%}
     </nav>
 {%- endmacro %}

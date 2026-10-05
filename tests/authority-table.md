@@ -312,6 +312,90 @@ Checks: `properties.configure`
 | Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/cancellation |
 | Super Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/cancellation |
 
+## property_bookings: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/bookings
+
+Checks: `property_bookings.read`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: Bookings · Probed camp · vivutio |
+| Super Admin | allowed: Bookings · Probed camp · vivutio |
+
+## property_booking_new: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/bookings/new
+
+Checks: `property_bookings.record`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: New booking · Probed camp · vivutio |
+| Super Admin | allowed: New booking · Probed camp · vivutio |
+
+## property_booking_new: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/bookings/new
+
+Checks: `property_bookings.record`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | answered 422 |
+| Super Admin | answered 422 |
+
+## property_booking: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/bookings/0199a6f0-9e01-7e10-8000-000000009e08
+
+Checks: `property_bookings.read`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | allowed: PC-0001 · Probed camp · vivutio |
+| Super Admin | allowed: PC-0001 · Probed camp · vivutio |
+
+## property_booking_confirm: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/bookings/0199a6f0-9e01-7e10-8000-000000009e08/confirm
+
+Checks: `property_bookings.manage`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/bookings/0199a6f0-9e01-7e10-8000-000000009e08 |
+| Super Admin | answered 422 |
+
+## property_booking_cancel: POST /properties/0199a6f0-9e01-7e10-8000-000000009e01/bookings/0199a6f0-9e01-7e10-8000-000000009e08/cancel
+
+Checks: `property_bookings.manage`
+
+| Person | Outcome |
+|---|---|
+| signed out | sent to sign-in |
+| deactivated while signed in | sent to sign-in |
+| Staff, no position | refused |
+| Staff holding the pair | refused |
+| Staff holding all but the pair | refused |
+| Admin | redirected to /properties/0199a6f0-9e01-7e10-8000-000000009e01/bookings/0199a6f0-9e01-7e10-8000-000000009e08 |
+| Super Admin | answered 422 |
+
 ## property_rates: GET /properties/0199a6f0-9e01-7e10-8000-000000009e01/rates?year=2026
 
 Checks: `properties.read`

@@ -25,6 +25,7 @@ use Vivutio\Contracts\Access\Verb;
 final readonly class PropertyConcerns implements ConcernSourceInterface
 {
     public const string PROPERTIES = 'properties';
+    public const string PROPERTY_BOOKINGS = 'property_bookings';
 
     public function declaredBy(): string
     {
@@ -42,6 +43,15 @@ final readonly class PropertyConcerns implements ConcernSourceInterface
             moduleSlug: 'property',
             // The organization's structure is set by the tiers alone.
             tierOnly: [Verb::Configure],
+        );
+
+        yield new Concern(
+            key: self::PROPERTY_BOOKINGS,
+            label: 'Property bookings',
+            description: 'Bookings received at a property: reading them, recording one, and confirming or cancelling it.',
+            verbs: [Verb::Read, Verb::Record, Verb::Manage],
+            scopes: [Scope::ORGANIZATION, PropertyScopes::PROPERTY],
+            moduleSlug: 'property',
         );
     }
 }
