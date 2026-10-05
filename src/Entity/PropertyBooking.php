@@ -19,8 +19,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Vivutio\Bundle\IdentityBundle\Entity\Trait\TimestampableTrait;
 use Vivutio\Bundle\IdentityBundle\Entity\Trait\UuidTrait;
-use Vivutio\Contracts\Place\PlacedInterface;
 use Vivutio\Contracts\Place\PlaceInterface;
+use Vivutio\Contracts\Stay\StayInterface;
 use Vivutio\Property\Enum\BookingStatusEnum;
 use Vivutio\Property\Repository\PropertyBookingRepository;
 
@@ -36,10 +36,12 @@ use Vivutio\Property\Repository\PropertyBookingRepository;
 #[ORM\Entity(repositoryClass: PropertyBookingRepository::class)]
 #[ORM\Table(name: 'property_booking')]
 #[ORM\HasLifecycleCallbacks]
-class PropertyBooking implements PlacedInterface
+class PropertyBooking implements StayInterface
 {
     use TimestampableTrait;
     use UuidTrait;
+    /** The kind of stay a booking is, wherever a front desk keeps it. */
+    public const string STAY_KIND = 'property_booking';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -122,6 +124,34 @@ class PropertyBooking implements PlacedInterface
     public function placedAt(): PlaceInterface
     {
         return $this->property;
+    }
+
+    public function getStayKind(): string
+    {
+        return self::STAY_KIND;
+    }
+
+    public function getStayId(): string
+    {
+        return (string) $this->getUuid();
+    }
+
+    public function getUnits(): array
+    {
+        $units = [];
+        foreach ($this->lines as $line) {
+            $type = (string) $line->getRoomType()->getUuid();
+            $units[$type] ??= ['type' => $type, 'name' => $line->getRoomType()->getName(), 'count' => 0];
+            $units[$type]['count'] += $line->getRooms();
+        }
+
+        return array_values($units);
+    }
+
+    /** A confirmed booking is expected at the desk; a hold or a cancelled one is not. */
+    public function isExpected(): bool
+    {
+        return BookingStatusEnum::Confirmed === $this->status;
     }
 
     public function getId(): ?int

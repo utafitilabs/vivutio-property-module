@@ -21,6 +21,8 @@ use Vivutio\Contracts\Identity\PositionCardFieldInterface;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
 use Vivutio\Contracts\Place\ReachSourceInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
+use Vivutio\Contracts\Stay\StaySourceInterface;
+use Vivutio\Contracts\Stay\UnitSourceInterface;
 use Vivutio\Property\Access\PropertyConcerns;
 use Vivutio\Property\Access\PropertyScopes;
 use Vivutio\Property\Controller\BookingController;
@@ -55,6 +57,8 @@ use Vivutio\Property\Service\RoomTypeService;
 use Vivutio\Property\Service\SeasonCalendarService;
 use Vivutio\Property\Service\SeasonService;
 use Vivutio\Property\Shell\PropertyMenu;
+use Vivutio\Property\Stay\PropertyStays;
+use Vivutio\Property\Stay\PropertyUnits;
 
 /*
  * Every service is defined explicitly, with an id prefixed by the bundle's
@@ -220,6 +224,14 @@ return static function (ContainerConfigurator $container): void {
             service('property.cancellation'),
         ]);
     $services->alias(PropertyBookingService::class, 'property.bookings');
+
+    // Its bookings as stays, and its room types as units, for a front desk.
+    $services->set('property.stays', PropertyStays::class)
+        ->args([service(PropertyRepository::class), service(PropertyBookingRepository::class)])
+        ->tag(StaySourceInterface::TAG);
+    $services->set('property.units', PropertyUnits::class)
+        ->args([service(PropertyRepository::class), service(RoomTypeRepository::class)])
+        ->tag(UnitSourceInterface::TAG);
 
     $services->set('property.controller.bookings', BookingController::class)
         ->args([

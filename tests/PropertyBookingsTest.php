@@ -30,6 +30,9 @@ use Vivutio\Property\Exception\InvalidBookingException;
 use Vivutio\Property\Model\BookingDetails;
 use Vivutio\Property\Model\PropertyDetails;
 use Vivutio\Property\Model\RoomTypeDetails;
+use Vivutio\Property\Repository\PropertyBookingRepository;
+use Vivutio\Property\Repository\PropertyRepository;
+use Vivutio\Property\Repository\RoomTypeRepository;
 use Vivutio\Property\Service\AvailabilityService;
 use Vivutio\Property\Service\CancellationService;
 use Vivutio\Property\Service\PropertyBookingService;
@@ -37,6 +40,8 @@ use Vivutio\Property\Service\PropertyService;
 use Vivutio\Property\Service\RateService;
 use Vivutio\Property\Service\RoomTypeService;
 use Vivutio\Property\Service\SeasonService;
+use Vivutio\Property\Stay\PropertyStays;
+use Vivutio\Property\Stay\PropertyUnits;
 use Vivutio\Property\Tests\Application\Kernel;
 
 /**
@@ -160,6 +165,26 @@ final class PropertyBookingsTest extends KernelTestCase
 
         $hold = $this->book(['status' => 'provisional', 'held_until' => '2026-09-30']);
         self::assertSame(0, $this->service(PropertyBookingService::class)->cancel($hold, 'Released'));
+    }
+
+    /** A booking is a stay a front desk works from, through the core's contracts, and the room types are the units it puts guests in. */
+    public function testABookingIsAStayAndTheRoomTypesAreUnits(): void
+    {
+        $confirmed = $this->book(['lines' => [['room' => (string) $this->tented->getUuid(), 'rooms' => '2', 'adults' => '2', 'children' => '0', 'infants' => '0', 'board' => 'full_board']]]);
+        $this->book(['status' => 'provisional', 'held_until' => '2026-07-15', 'arrival' => '2026-12-01']);
+        $stays = new PropertyStays($this->service(PropertyRepository::class), $this->service(PropertyBookingRepository::class));
+        $lodge = $this->fresh();
+
+        $found = [...$stays->at($lodge, new \DateTimeImmutable('2026-11-02'), new \DateTimeImmutable('2026-11-02'))];
+        self::assertCount(1, $found, 'leaving on the day counts');
+        self::assertSame('VLL-0001', $found[0]->getReference());
+        self::assertSame([['type' => (string) $this->tented->getUuid(), 'name' => 'Tented Room', 'count' => 2]], $found[0]->getUnits());
+        self::assertTrue($found[0]->isExpected());
+        self::assertSame((string) $confirmed->getUuid(), $stays->find((string) $confirmed->getUuid())?->getStayId());
+        self::assertFalse([...$stays->at($lodge, new \DateTimeImmutable('2026-12-01'), new \DateTimeImmutable('2026-12-01'))][0]->isExpected(), 'a hold is not expected');
+
+        $units = (new PropertyUnits($this->service(PropertyRepository::class), $this->service(RoomTypeRepository::class)))->units($lodge);
+        self::assertSame(['Tented Room' => 20, 'Family Tent' => 4], array_column($units ?? [], 'count', 'name'));
     }
 
     public function testOnlyAnOpenPropertyTakesBookings(): void
