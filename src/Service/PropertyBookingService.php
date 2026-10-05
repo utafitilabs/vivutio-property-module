@@ -15,6 +15,7 @@ namespace Vivutio\Property\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
+use Vivutio\Contracts\Partner\PartnerDirectoryInterface;
 use Vivutio\Property\Entity\Property;
 use Vivutio\Property\Entity\PropertyBooking;
 use Vivutio\Property\Entity\PropertyBookingLine;
@@ -50,6 +51,7 @@ final readonly class PropertyBookingService
         private RateQuoteService $quotes,
         private AvailabilityService $availability,
         private CancellationService $cancellation,
+        private PartnerDirectoryInterface $partners,
     ) {
     }
 
@@ -86,6 +88,14 @@ final readonly class PropertyBookingService
             }
         }
 
+        $partner = null;
+        if ('' !== trim($details->partner)) {
+            $partner = $this->partners->find(trim($details->partner));
+            if (null === $partner || !$partner->isActive()) {
+                throw new InvalidBookingException('partner', 'Choose a partner you trade with now, or Direct.');
+            }
+        }
+
         $lines = $this->lines($property, $details, $arrival, $nights);
 
         $booking = (new PropertyBooking($property, $this->reference($property), $guest, $arrival, $nights, (string) $property->getCurrency()))
@@ -108,7 +118,13 @@ final readonly class PropertyBookingService
             }
         }
         ksort($kept);
-        $booking->setTotal($total)->setPricedNights(array_values($kept));
+        $kept = array_values($kept);
+        $booking->setGross($total);
+        if (null !== $partner) {
+            $booking->setPartnerTerms($partner->getPartnerId(), $partner->getDiscount(), $partner->getCreditDays());
+            [$total, $kept] = self::discounted($total, $kept, $partner->getDiscount());
+        }
+        $booking->setTotal($total)->setPricedNights($kept);
 
         $this->entityManager->persist($booking);
         $this->entityManager->flush();
@@ -162,6 +178,27 @@ final readonly class PropertyBookingService
     public function chargeIf(PropertyBooking $booking, \DateTimeImmutable $on): CancellationCharge
     {
         return $this->cancellation->chargeOf($booking->getPricedNights(), $booking->getCurrency(), $on);
+    }
+
+    /**
+     * The total and each night's cost after a discount: each night less its
+     * share, the last night taking the cents rounding leaves, so the nights
+     * add up to the total a cancellation is charged from.
+     *
+     * @param list<array{date: string, season: string, total: int, tiers: list<array{days: int, percent: int}>}> $nights
+     *
+     * @return array{int, list<array{date: string, season: string, total: int, tiers: list<array{days: int, percent: int}>}>}
+     */
+    private static function discounted(int $gross, array $nights, string $discount): array
+    {
+        $total = $gross - (int) round($gross * (float) $discount / 100);
+        $left = $total;
+        foreach ($nights as $i => $night) {
+            $nights[$i]['total'] = array_key_last($nights) === $i ? $left : $night['total'] - (int) round($night['total'] * (float) $discount / 100);
+            $left -= $nights[$i]['total'];
+        }
+
+        return [$total, $nights];
     }
 
     /**

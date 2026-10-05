@@ -26,6 +26,9 @@ use Vivutio\Bundle\IdentityBundle\Entity\Department;
 use Vivutio\Bundle\IdentityBundle\Entity\Position;
 use Vivutio\Bundle\IdentityBundle\Entity\User;
 use Vivutio\Bundle\IdentityBundle\Enum\TierEnum;
+use Vivutio\Bundle\PartnerBundle\Entity\Partner;
+use Vivutio\Bundle\PartnerBundle\Enum\PartnerKindEnum;
+use Vivutio\Bundle\PartnerBundle\Enum\PartnerStatusEnum;
 use Vivutio\Property\Entity\Property;
 use Vivutio\Property\Entity\PropertyBooking;
 use Vivutio\Property\Entity\RoomType;
@@ -106,6 +109,45 @@ final class TheBookingsTest extends WebTestCase
         $night = $this->browser->request('GET', '/properties/'.$this->lodge->getUuid().'/calendar/2026-10-30');
         self::assertSame('18 of 20 free', trim($night->filter('[data-room="Tented Room"] [data-free]')->text()));
         self::assertSame(['VLL-0001 · Mollel party: 2 booked'], $night->filter('[data-room="Tented Room"] [data-out]')->each(static fn (Crawler $line): string => trim((string) preg_replace('/\s+/', ' ', $line->text()))));
+    }
+
+    /** A partner's booking is priced at its discount, every night of it, and says the days it has to pay. */
+    public function testABookingMadeByAPartnerIsPricedAtItsTerms(): void
+    {
+        $this->openLodge();
+        $savanna = (new Partner('Savanna Trails Safaris', PartnerKindEnum::TourOperator, 'KE', 'reservations@savanna-trails.example'))->setDiscount('15.00')->setCreditDays(30);
+        $kilele = (new Partner('Kilele Tours', PartnerKindEnum::TravelAgent, 'TZ', 'bookings@kilele.example'))->setStatus(PartnerStatusEnum::Archived);
+        $this->em()->persist($savanna);
+        $this->em()->persist($kilele);
+        $this->em()->flush();
+
+        $page = $this->browser->request('GET', '/properties/'.$this->lodge->getUuid().'/bookings/new');
+        self::assertSame(['Direct', 'Savanna Trails Safaris'], $page->filter('select[name="partner"] option')->each(static fn (Crawler $option): string => trim($option->text())));
+        $this->browser->submit($page->selectButton('Record the booking')->form([
+            'guest' => 'Mollel party',
+            'partner' => $savanna->getPartnerId(),
+            'arrival' => '2026-10-30',
+            'nights' => '3',
+            'lines[0][room]' => (string) $this->tented->getUuid(),
+            'lines[0][rooms]' => '2',
+            'status' => 'confirmed',
+        ]));
+
+        $booking = $this->only();
+        self::assertSame($savanna->getPartnerId(), $booking->getPartnerId());
+        self::assertSame(268600, $booking->getTotal());
+        self::assertSame(268600, array_sum(array_column($booking->getPricedNights(), 'total')));
+        $record = $this->browser->followRedirect();
+        self::assertSame('USD 2,686.00', trim($record->filter('[data-total]')->text()));
+        self::assertSame('Savanna Trails Safaris · 15% off USD 3,160.00 · 30 days to pay', trim((string) preg_replace('/\s+/', ' ', $record->filter('[data-partner]')->text())));
+        self::assertSame('Savanna Trails Safaris', trim($this->browser->request('GET', '/properties/'.$this->lodge->getUuid().'/bookings')->filter('tr[data-booking="VLL-0001"] [data-by]')->text()));
+
+        $page = $this->browser->request('GET', '/properties/'.$this->lodge->getUuid().'/bookings/new');
+        $form = $page->selectButton('Record the booking')->form();
+        $form->disableValidation();
+        $page = $this->browser->submit($form->setValues(['guest' => 'Late party', 'partner' => $kilele->getPartnerId(), 'arrival' => '2026-10-30', 'nights' => '1', 'lines[0][room]' => (string) $this->tented->getUuid(), 'lines[0][rooms]' => '1', 'status' => 'confirmed']));
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('partner', $page->filter('.field.wrong select')->attr('name'));
     }
 
     public function testWhatABookingCannotBeIsSaidBesideItsLine(): void

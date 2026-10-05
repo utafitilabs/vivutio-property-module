@@ -24,6 +24,7 @@ final readonly class BookingDetails
      */
     public function __construct(
         public string $guest,
+        public string $partner,
         public string $bookedBy,
         public string $theirReference,
         public string $arrival,
@@ -51,6 +52,7 @@ final readonly class BookingDetails
 
         return new self(
             $text($sent, 'guest'),
+            $text($sent, 'partner'),
             $text($sent, 'booked_by'),
             $text($sent, 'their_reference'),
             $text($sent, 'arrival'),

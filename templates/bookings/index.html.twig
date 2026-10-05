@@ -33,7 +33,7 @@
         <tbody>
         {% for booking in bookings %}
             <tr data-booking="{{ booking.reference }}">
-                <td><div><b>{{ booking.reference }}</b><small>{{ booking.guest }}{% if booking.bookedBy %} &middot; {{ booking.bookedBy }}{% endif %}</small></div></td>
+                <td><div><b>{{ booking.reference }}</b><small>{{ booking.guest }}{% if booking.partnerId %} &middot; <span data-by>{{ partners[booking.partnerId] }}</span>{% elseif booking.bookedBy %} &middot; {{ booking.bookedBy }}{% endif %}</small></div></td>
                 <td data-stay>{{ bookings_.stay(booking) }}</td>
                 <td data-rooms>{% for line in booking.lines %}{{ line.rooms }} {{ line.roomType.name }}{{ not loop.last ? ', ' }}{% endfor %}</td>
                 <td data-status>{{ bookings_.status_chip(booking, now) }}</td>

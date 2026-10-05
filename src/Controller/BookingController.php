@@ -27,6 +27,7 @@ use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Twig\Environment;
+use Vivutio\Contracts\Partner\PartnerDirectoryInterface;
 use Vivutio\Property\Entity\Property;
 use Vivutio\Property\Entity\PropertyBooking;
 use Vivutio\Property\Enum\BoardBasisEnum;
@@ -70,6 +71,7 @@ final readonly class BookingController
         private ClockInterface $clock,
         private CsrfTokenManagerInterface $tokens,
         private UrlGeneratorInterface $urls,
+        private PartnerDirectoryInterface $partners,
     ) {
     }
 
@@ -92,6 +94,7 @@ final readonly class BookingController
             'band' => $this->directory->band($property),
             'bookings' => array_values(array_filter($all, static fn (PropertyBooking $booking): bool => null === $status || $booking->getStatus() === $status)),
             'total' => \count($all),
+            'partners' => $this->partnerNames($all),
             'counts' => $counts,
             'statuses' => BookingStatusEnum::cases(),
             'status' => $status,
@@ -231,6 +234,7 @@ final readonly class BookingController
             'typed' => $details,
             'lines' => $lines,
             'rooms' => $this->rooms->findOnSaleByProperty($property),
+            'partners' => $this->partners->active(),
             'boards' => array_values(array_filter(BoardBasisEnum::cases(), static fn (BoardBasisEnum $basis): bool => \in_array($basis->value, $property->getBoards(), true))),
             'today' => $this->clock->now(),
             'wrong' => $wrong,
@@ -248,6 +252,7 @@ final readonly class BookingController
         return new Response($this->twig->render('@VivutioProperty/bookings/booking.html.twig', [
             'property' => $booking->getProperty(),
             'booking' => $booking,
+            'partner' => null === $booking->getPartnerId() ? null : $this->partners->find($booking->getPartnerId()),
             'now' => $now,
             'lapsed' => $booking->isLapsed($now),
             'charge_today' => BookingStatusEnum::Confirmed === $booking->getStatus() ? $this->service->chargeIf($booking, $now) : null,
@@ -256,5 +261,25 @@ final readonly class BookingController
             'expired' => $expired,
             'said' => $said,
         ]), [] === $wrong && !$expired ? Response::HTTP_OK : Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    /**
+     * The name of each partner the bookings were made by, by its id.
+     *
+     * @param list<PropertyBooking> $bookings
+     *
+     * @return array<string, string>
+     */
+    private function partnerNames(array $bookings): array
+    {
+        $names = [];
+        foreach ($bookings as $booking) {
+            $id = $booking->getPartnerId();
+            if (null !== $id && !isset($names[$id])) {
+                $names[$id] = $this->partners->find($id)?->getName() ?? 'A partner no longer kept';
+            }
+        }
+
+        return $names;
     }
 }

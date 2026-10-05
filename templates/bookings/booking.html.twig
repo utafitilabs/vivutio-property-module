@@ -46,7 +46,11 @@
         <section class="panel small">
             <header class="panel-head"><h2>For</h2></header>
             <div class="fact"><span>Guest</span><b data-guest>{{ booking.guest }}</b></div>
-            <div class="fact"><span>Booked by</span><b>{{ booking.bookedBy ?? 'The guest directly' }}</b></div>
+            {% if booking.partnerId %}
+                {%- set share = booking.discount|number_format(2)|trim('0', 'right')|trim('.', 'right') -%}
+                <div class="fact"><span>Partner</span><b data-partner>{{ partner ? partner.name : 'A partner no longer kept' }}{% if share != '0' %} · {{ share }}% off {{ bookings_.money(booking.currency, booking.gross) }}{% endif %} · {{ booking.creditDays > 0 ? booking.creditDays ~ ' days to pay' : 'pays on booking' }}</b></div>
+            {% endif %}
+            <div class="fact"><span>Booked by</span><b>{{ booking.bookedBy ?? (booking.partnerId ? '—' : 'The guest directly') }}</b></div>
             {% if booking.theirReference %}<div class="fact"><span>Their reference</span><b>{{ booking.theirReference }}</b></div>{% endif %}
             {% if booking.notes %}<p class="hint">{{ booking.notes|nl2br }}</p>{% endif %}
         </section>

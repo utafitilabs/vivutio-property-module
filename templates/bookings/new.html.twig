@@ -19,9 +19,10 @@
 <form class="panel" method="post" action="{{ path('property_booking_new', {uuid: property.uuid}) }}" novalidate>
     <header class="panel-head"><h2>Booking</h2><p>Priced by the rates and terms in force when it is recorded, and kept</p></header>
     <input type="hidden" name="_token" value="{{ csrf_token('property_booking_new') }}">
-    <div class="grid-3">
+    <div class="grid-2">
         <div class="field{{ wrong.guest is defined ? ' wrong' }}"><label for="booking-guest">For</label><input class="input" id="booking-guest" name="guest" value="{{ typed.guest }}" maxlength="120">{{ properties_.hint('guest', wrong, 'The lead guest, or the party: Mollel party') }}</div>
-        <div class="field{{ wrong.booked_by is defined ? ' wrong' }}"><label for="booking-by">Booked by</label><input class="input" id="booking-by" name="booked_by" value="{{ typed.bookedBy }}" maxlength="120">{{ properties_.hint('booked_by', wrong, 'An operator or agent, or empty for the guest directly') }}</div>
+        <div class="field{{ wrong.partner is defined ? ' wrong' }}"><label for="booking-partner">Partner</label><select class="select" id="booking-partner" name="partner"><option value="">Direct</option>{% for partner in partners %}<option value="{{ partner.partnerId }}"{{ partner.partnerId == typed.partner ? ' selected' }}>{{ partner.name }}</option>{% endfor %}</select>{{ properties_.hint('partner', wrong, 'The operator or agent it comes through, priced at their terms') }}</div>
+        <div class="field{{ wrong.booked_by is defined ? ' wrong' }}"><label for="booking-by">Booked by</label><input class="input" id="booking-by" name="booked_by" value="{{ typed.bookedBy }}" maxlength="120">{{ properties_.hint('booked_by', wrong, 'Who made it: the guest, or somebody at the partner') }}</div>
         <div class="field{{ wrong.their_reference is defined ? ' wrong' }}"><label for="booking-theirs">Their reference</label><input class="input" id="booking-theirs" name="their_reference" value="{{ typed.theirReference }}" maxlength="60">{{ properties_.hint('their_reference', wrong, null) }}</div>
     </div>
     <div class="grid-3">

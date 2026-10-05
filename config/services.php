@@ -18,6 +18,7 @@ use Vivutio\Bundle\IdentityBundle\Repository\UserRepository;
 use Vivutio\Contracts\Access\ConcernSourceInterface;
 use Vivutio\Contracts\Access\ScopeSourceInterface;
 use Vivutio\Contracts\Identity\PositionCardFieldInterface;
+use Vivutio\Contracts\Partner\PartnerDirectoryInterface;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
 use Vivutio\Contracts\Place\ReachSourceInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
@@ -222,6 +223,7 @@ return static function (ContainerConfigurator $container): void {
             service('property.rate_quotes'),
             service('property.availability'),
             service('property.cancellation'),
+            service(PartnerDirectoryInterface::class),
         ]);
     $services->alias(PropertyBookingService::class, 'property.bookings');
 
@@ -244,6 +246,7 @@ return static function (ContainerConfigurator $container): void {
             service('clock'),
             service('security.csrf.token_manager'),
             service('router'),
+            service(PartnerDirectoryInterface::class),
         ])
         ->public();
     $services->alias(BookingController::class, 'property.controller.bookings')->public();

@@ -85,9 +85,25 @@ class PropertyBooking implements StayInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
 
-    /** What it cost when it was made, in cents of its currency. */
+    /** What it costs, in cents of its currency, after the partner's discount when one made it. */
     #[ORM\Column]
     private int $total = 0;
+
+    /** What it cost at the property's rates when it was made, before any discount, in cents. */
+    #[ORM\Column]
+    private int $gross = 0;
+
+    /** The partner that made it, by the id the core's partners are known by; null when it is direct. */
+    #[ORM\Column(length: 36, nullable: true)]
+    private ?string $partnerId = null;
+
+    /** The discount it was made at, a share to the cent. */
+    #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
+    private string $discount = '0.00';
+
+    /** The days to pay it was made with. */
+    #[ORM\Column]
+    private int $creditDays = 0;
 
     #[ORM\Column(length: 3)]
     private string $currency;
@@ -278,6 +294,46 @@ class PropertyBooking implements StayInterface
         $this->total = $total;
 
         return $this;
+    }
+
+    public function getGross(): int
+    {
+        return $this->gross;
+    }
+
+    public function setGross(int $gross): static
+    {
+        $this->gross = $gross;
+
+        return $this;
+    }
+
+    public function getPartnerId(): ?string
+    {
+        return $this->partnerId;
+    }
+
+    /**
+     * The partner that made it and the terms it was made at, kept as they
+     * were: a partner's terms changing later changes no booking.
+     */
+    public function setPartnerTerms(?string $partnerId, string $discount, int $creditDays): static
+    {
+        $this->partnerId = $partnerId;
+        $this->discount = $discount;
+        $this->creditDays = $creditDays;
+
+        return $this;
+    }
+
+    public function getDiscount(): string
+    {
+        return $this->discount;
+    }
+
+    public function getCreditDays(): int
+    {
+        return $this->creditDays;
     }
 
     public function getCurrency(): string
