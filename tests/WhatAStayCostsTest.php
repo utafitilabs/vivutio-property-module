@@ -18,6 +18,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Vivutio\Bundle\PlaceBundle\Service\NightCostService;
 use Vivutio\Property\Entity\Property;
 use Vivutio\Property\Entity\RoomType;
 use Vivutio\Property\Entity\SeasonPeriod;
@@ -133,6 +134,19 @@ final class WhatAStayCostsTest extends KernelTestCase
         $rates->saveRates($camp, BoardBasisEnum::HalfBoard, [(string) $tent->getUuid() => [(string) $period->getUuid() => '400']]);
 
         self::assertSame(80000, $this->service(RateQuoteService::class)->quote($tent, BoardBasisEnum::HalfBoard, new \DateTimeImmutable('2026-07-01'), 2, 1, 0, 0)->total);
+    }
+
+    /** A tour asks the core what a night costs a person; the property answers from its cheapest room for two. */
+    public function testATourIsToldWhatANightCostsAPersonSharing(): void
+    {
+        $costs = $this->service(NightCostService::class);
+        $lodge = 'property:'.$this->lodge->getUuid();
+
+        $high = $costs->costOf($lodge, new \DateTimeImmutable('2026-07-01'));
+        self::assertNotNull($high);
+        self::assertSame(['USD', 29000, 'Tented Room, full board, sharing'], [$high->currency, $high->each, $high->basis]);
+        self::assertSame(21000, $costs->costOf($lodge, new \DateTimeImmutable('2026-12-01'))?->each, 'the Family Tent has no Green Season rate');
+        self::assertNull($costs->costOf($lodge, new \DateTimeImmutable('2026-03-01')), 'a night in no season');
     }
 
     private function quote(RoomType $room, string $arrival, int $nights, int $adults, int $children = 0, int $infants = 0): Quote

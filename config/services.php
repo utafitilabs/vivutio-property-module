@@ -24,6 +24,7 @@ use Vivutio\Contracts\Partner\PartnerDirectoryInterface;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
 use Vivutio\Contracts\Place\ReachSourceInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
+use Vivutio\Contracts\Stay\NightCostSourceInterface;
 use Vivutio\Contracts\Stay\StaySourceInterface;
 use Vivutio\Contracts\Stay\UnitSourceInterface;
 use Vivutio\Property\Access\PropertyConcerns;
@@ -38,6 +39,7 @@ use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
 use Vivutio\Property\Deletion\PropertyDeletion;
 use Vivutio\Property\Identity\PropertyPositionCard;
+use Vivutio\Property\Place\PropertyNightCosts;
 use Vivutio\Property\Place\PropertyPlaces;
 use Vivutio\Property\Place\PropertyReachSource;
 use Vivutio\Property\Repository\ClosureRepository;
@@ -166,6 +168,10 @@ return static function (ContainerConfigurator $container): void {
     $services->set('property.rate_quotes', RateQuoteService::class)
         ->args([service(RateRepository::class), service(RateTermsRepository::class), service(SeasonPeriodRepository::class)]);
     $services->alias(RateQuoteService::class, 'property.rate_quotes');
+
+    $services->set('property.night_costs', PropertyNightCosts::class)
+        ->args([service(PropertyRepository::class), service(RoomTypeRepository::class), service('property.rate_quotes')])
+        ->tag(NightCostSourceInterface::TAG);
 
     // What cancelling costs, and the tiers it is counted by.
     $services->set('property.cancellation', CancellationService::class)

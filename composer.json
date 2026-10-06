@@ -33,7 +33,7 @@
         "symfony/security-http": "^8.0",
         "symfony/twig-bundle": "^8.0",
         "twig/twig": "^3.21",
-        "vivutio/vivutio": "^0.1.20"
+        "vivutio/vivutio": "^0.1.25"
     },
     "require-dev": {
         "doctrine/doctrine-migrations-bundle": "^4.0",
