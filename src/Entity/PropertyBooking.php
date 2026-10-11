@@ -115,6 +115,10 @@ class PropertyBooking implements StayInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $cancelledAt = null;
 
+    /** When it was recorded: what it is owed is raised from that day. */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private \DateTimeImmutable $madeAt;
+
     #[ORM\Column(length: 200, nullable: true)]
     private ?string $cancellationReason = null;
 
@@ -135,6 +139,7 @@ class PropertyBooking implements StayInterface
         $this->nights = $nights;
         $this->currency = $currency;
         $this->lines = new ArrayCollection();
+        $this->madeAt = new \DateTimeImmutable();
     }
 
     public function placedAt(): PlaceInterface
@@ -355,6 +360,18 @@ class PropertyBooking implements StayInterface
     public function setPricedNights(array $pricedNights): static
     {
         $this->pricedNights = $pricedNights;
+
+        return $this;
+    }
+
+    public function getMadeAt(): \DateTimeImmutable
+    {
+        return $this->madeAt;
+    }
+
+    public function setMadeAt(\DateTimeImmutable $madeAt): static
+    {
+        $this->madeAt = $madeAt;
 
         return $this;
     }

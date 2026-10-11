@@ -29,6 +29,8 @@ use Vivutio\Bundle\IdentityBundle\Enum\TierEnum;
 use Vivutio\Bundle\PartnerBundle\Entity\Partner;
 use Vivutio\Bundle\PartnerBundle\Enum\PartnerKindEnum;
 use Vivutio\Bundle\PartnerBundle\Enum\PartnerStatusEnum;
+use Vivutio\Contracts\Partner\Charge;
+use Vivutio\Contracts\Partner\ChargesInterface;
 use Vivutio\Property\Entity\Property;
 use Vivutio\Property\Entity\PropertyBooking;
 use Vivutio\Property\Entity\RoomType;
@@ -109,6 +111,37 @@ final class TheBookingsTest extends WebTestCase
         $night = $this->browser->request('GET', '/properties/'.$this->lodge->getUuid().'/calendar/2026-10-30');
         self::assertSame('18 of 20 free', trim($night->filter('[data-room="Tented Room"] [data-free]')->text()));
         self::assertSame(['VLL-0001 · Mollel party: 2 booked'], $night->filter('[data-room="Tented Room"] [data-out]')->each(static fn (Crawler $line): string => trim((string) preg_replace('/\s+/', ' ', $line->text()))));
+    }
+
+    /** What a booking is owed, through the core: a confirmed one its total from the day it was made, due in its partner's days to pay; a cancelled one what its cancellation kept; a held one nothing yet. */
+    public function testABookingSaysWhatItIsOwedThroughTheCore(): void
+    {
+        $this->openLodge();
+        $savanna = (new Partner('Savanna Trails Safaris', PartnerKindEnum::TourOperator, 'KE', 'reservations@savanna-trails.example'))->setDiscount('15.00')->setCreditDays(30);
+        $this->em()->persist($savanna);
+        $this->em()->flush();
+        foreach ([['Mollel party', $savanna->getPartnerId(), 'confirmed', '2026-10-30'], ['Kweka party', '', 'provisional', '2026-11-10'], ['Hansen family', '', 'confirmed', '2026-11-20']] as [$guest, $partner, $status, $arrival]) {
+            $page = $this->browser->request('GET', '/properties/'.$this->lodge->getUuid().'/bookings/new');
+            $this->browser->submit($page->selectButton('Record the booking')->form(['guest' => $guest, 'partner' => $partner, 'arrival' => $arrival, 'nights' => '3', 'lines[0][room]' => (string) $this->tented->getUuid(), 'lines[0][rooms]' => '2', 'status' => $status, 'held_until' => 'provisional' === $status ? '2026-08-01' : '']));
+            self::assertResponseRedirects();
+        }
+        $hansen = $this->em()->getRepository(PropertyBooking::class)->findOneBy(['guest' => 'Hansen family']);
+        self::assertInstanceOf(PropertyBooking::class, $hansen);
+        $clock = static::getContainer()->get('clock');
+        self::assertInstanceOf(MockClock::class, $clock);
+        $clock->modify('2026-07-05 10:00');
+        $page = $this->browser->request('GET', '/properties/'.$this->lodge->getUuid().'/bookings/'.$hansen->getUuid());
+        $this->browser->submit($page->selectButton('Cancel the booking')->form(['reason' => 'Changed plans']));
+
+        $charges = static::getContainer()->get(ChargesInterface::class);
+        self::assertInstanceOf(ChargesInterface::class, $charges);
+        $mollel = $this->em()->getRepository(PropertyBooking::class)->findOneBy(['guest' => 'Mollel party']);
+        self::assertInstanceOf(PropertyBooking::class, $mollel);
+        self::assertSame([
+            ['property_booking:'.$hansen->getUuid(), 'VLL-0003', 'Booking', 'Vivutio Lakeshore Lodge, 20 – 23 Nov 2026, cancelled', null, 'Hansen family', 'USD', (int) $hansen->getCancellationCharge(), '2026-07-05', '2026-07-05'],
+            ['property_booking:'.$mollel->getUuid(), 'VLL-0001', 'Booking', 'Vivutio Lakeshore Lodge, 30 Oct – 2 Nov 2026', $savanna->getPartnerId(), 'Mollel party', 'USD', $mollel->getTotal(), '2026-07-01', '2026-07-31'],
+        ], array_map(static fn (Charge $charge): array => [$charge->key, $charge->reference, $charge->kind, $charge->about, $charge->partnerId, $charge->party, $charge->currency, $charge->amount, $charge->raisedOn->format('Y-m-d'), $charge->dueOn->format('Y-m-d')], $charges->all()));
+        self::assertSame(['property_booking', ['uuid' => (string) $this->lodge->getUuid(), 'booking' => (string) $mollel->getUuid()]], [$charges->all()[1]->route, $charges->all()[1]->routeParameters]);
     }
 
     /** A partner's booking is priced at its discount, every night of it, and says the days it has to pay. */

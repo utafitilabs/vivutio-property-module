@@ -103,7 +103,8 @@ final readonly class PropertyBookingService
             ->setTheirReference(self::optional($details->theirReference))
             ->setNotes(self::optional($details->notes))
             ->setStatus($status)
-            ->setHeldUntil($heldUntil);
+            ->setHeldUntil($heldUntil)
+            ->setMadeAt($this->clock->now());
 
         $total = 0;
         $kept = [];

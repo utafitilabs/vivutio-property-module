@@ -20,6 +20,7 @@ use Vivutio\Contracts\Access\ConcernSourceInterface;
 use Vivutio\Contracts\Access\ScopeSourceInterface;
 use Vivutio\Contracts\Deletion\DeletionContributorInterface;
 use Vivutio\Contracts\Identity\PositionCardFieldInterface;
+use Vivutio\Contracts\Partner\ChargeSourceInterface;
 use Vivutio\Contracts\Partner\PartnerDirectoryInterface;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
 use Vivutio\Contracts\Place\ReachSourceInterface;
@@ -39,6 +40,7 @@ use Vivutio\Property\Controller\RoomController;
 use Vivutio\Property\Controller\SeasonController;
 use Vivutio\Property\Deletion\PropertyDeletion;
 use Vivutio\Property\Identity\PropertyPositionCard;
+use Vivutio\Property\Partner\PropertyCharges;
 use Vivutio\Property\Place\PropertyNightCosts;
 use Vivutio\Property\Place\PropertyPlaces;
 use Vivutio\Property\Place\PropertyReachSource;
@@ -219,6 +221,9 @@ return static function (ContainerConfigurator $container): void {
     $services->set(PropertyBookingRepository::class)
         ->args([service('doctrine')])
         ->tag('doctrine.repository_service');
+    $services->set('property.charges', PropertyCharges::class)
+        ->args([service(PropertyBookingRepository::class)])
+        ->tag(ChargeSourceInterface::TAG);
     $services->set(PropertyBookingLineRepository::class)
         ->args([service('doctrine')])
         ->tag('doctrine.repository_service');
