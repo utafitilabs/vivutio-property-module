@@ -90,7 +90,7 @@ final readonly class PropertyDashboard implements DashboardSourceInterface
             rows: $rows,
             total: \count($held),
             empty: 'Nothing is held',
-            door: 'All bookings',
+            door: 'All properties',
             route: PropertyController::REGISTER,
             attribute: BookingController::READ,
             order: 20,

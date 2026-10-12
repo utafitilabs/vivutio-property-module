@@ -96,7 +96,7 @@ final class TheDashboardTest extends WebTestCase
         self::assertSame(['chip danger', 'chip danger', 'chip danger', 'chip warn', 'chip warn'], $card->filter('.chip')->each(static fn (Crawler $chip): string => (string) $chip->attr('class')));
         self::assertSame('5 of 8', self::words($card->filter('.panel-foot .state')));
         self::assertSame('/properties', $card->filter('.panel-foot a.more')->attr('href'));
-        self::assertSame('All bookings', self::words($card->filter('.panel-foot a.more')));
+        self::assertSame('All properties', self::words($card->filter('.panel-foot a.more')));
     }
 
     /** Beyond three days a chip is plain: "in a week" at seven. */
