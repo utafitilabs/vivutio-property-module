@@ -24,6 +24,7 @@ use Vivutio\Contracts\Partner\ChargeSourceInterface;
 use Vivutio\Contracts\Partner\PartnerDirectoryInterface;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
 use Vivutio\Contracts\Place\ReachSourceInterface;
+use Vivutio\Contracts\Shell\DashboardSourceInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Contracts\Stay\NightCostSourceInterface;
 use Vivutio\Contracts\Stay\StaySourceInterface;
@@ -65,6 +66,7 @@ use Vivutio\Property\Service\RateService;
 use Vivutio\Property\Service\RoomTypeService;
 use Vivutio\Property\Service\SeasonCalendarService;
 use Vivutio\Property\Service\SeasonService;
+use Vivutio\Property\Shell\PropertyDashboard;
 use Vivutio\Property\Shell\PropertyMenu;
 use Vivutio\Property\Stay\PropertyStays;
 use Vivutio\Property\Stay\PropertyUnits;
@@ -87,6 +89,16 @@ return static function (ContainerConfigurator $container): void {
     // The module's page in the menu, through the shell's seam.
     $services->set('property.menu', PropertyMenu::class)
         ->tag(MenuSourceInterface::TAG);
+
+    // The bookings held and still to confirm, on the organization's dashboard.
+    $services->set('property.dashboard', PropertyDashboard::class)
+        ->args([
+            service(PropertyBookingRepository::class),
+            service(PartnerDirectoryInterface::class),
+            service('security.authorization_checker'),
+            service('clock'),
+        ])
+        ->tag(DashboardSourceInterface::TAG);
 
     $services->set(PropertyRepository::class)
         ->args([service('doctrine')])

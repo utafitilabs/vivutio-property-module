@@ -61,6 +61,30 @@ class PropertyBookingRepository extends ServiceEntityRepository
         return array_values(array_filter($bookings, static fn (PropertyBooking $booking): bool => $booking->getDeparture() > $first));
     }
 
+    /**
+     * Every property's provisional bookings whose hold has not lapsed by the
+     * day given, the soonest to let go first.
+     *
+     * @return list<PropertyBooking>
+     */
+    public function findHeld(\DateTimeImmutable $today): array
+    {
+        /** @var list<PropertyBooking> $bookings */
+        $bookings = $this->createQueryBuilder('b')
+            ->addSelect('p')
+            ->join('b.property', 'p')
+            ->andWhere('b.status = :provisional')
+            ->andWhere('b.heldUntil >= :today')
+            ->setParameter('provisional', BookingStatusEnum::Provisional)
+            ->setParameter('today', $today, 'date_immutable')
+            ->orderBy('b.heldUntil', 'ASC')
+            ->addOrderBy('b.reference', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $bookings;
+    }
+
     /** How many bookings a property has had, so the next is numbered after them. */
     public function countByProperty(Property $property): int
     {

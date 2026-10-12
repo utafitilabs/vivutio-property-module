@@ -67,6 +67,10 @@ and the pages are gone. The migration builds its one table.
   the offices, and departments may sit at it.
 - **The `property` scope**, one or more named properties, which a grant may be
   limited to.
+- **On the dashboard**: through the core's dashboard contract, for whoever
+  reads property bookings, a "Held, to confirm" figure in the band, saying how
+  many let go today or tomorrow, and a card of the five holds soonest to let
+  go, counted over the properties the person's reach covers.
 
 Property bookings arrive with their own module work next.
 
